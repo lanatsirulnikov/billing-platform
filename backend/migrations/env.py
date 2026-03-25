@@ -3,7 +3,8 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.db.session import Base
-from app.models.customer import Customer  # ensure model is registered
+from app.models.customer import Customer
+from app.models.plan import Plan
 from app.core.settings import get_settings
 
 
