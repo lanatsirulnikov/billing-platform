@@ -1,0 +1,20 @@
+import uuid
+from datetime import datetime, date
+from typing import Optional
+from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric
+from sqlalchemy.dialects.mysql import CHAR
+from sqlalchemy.orm import Mapped, mapped_column
+from app.db.session import Base
+
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    customer_id: Mapped[str] = mapped_column(CHAR(36), ForeignKey("customers.id"), nullable=False)
+    plan_id: Mapped[str] = mapped_column(CHAR(36), ForeignKey("plans.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    user_quota_override: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

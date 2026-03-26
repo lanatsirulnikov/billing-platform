@@ -5,6 +5,7 @@ from alembic import context
 from app.db.session import Base
 from app.models.customer import Customer
 from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.core.settings import get_settings
 
 
