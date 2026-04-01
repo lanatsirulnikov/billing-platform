@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from decimal import Decimal
 from typing import Optional, Literal
 from pydantic import BaseModel
 
@@ -11,8 +12,8 @@ class InvoiceItemCreate(BaseModel):
     period_start: Optional[date] = None
     period_end: Optional[date] = None
     quantity: int
-    unit_price: float
-    amount: float
+    unit_price: Decimal
+    amount: Decimal
 
 
 class InvoiceItemOut(BaseModel):
@@ -24,8 +25,8 @@ class InvoiceItemOut(BaseModel):
     period_start: Optional[date]
     period_end: Optional[date]
     quantity: int
-    unit_price: float
-    amount: float
+    unit_price: Decimal
+    amount: Decimal
     created_at: datetime
     
     class Config:

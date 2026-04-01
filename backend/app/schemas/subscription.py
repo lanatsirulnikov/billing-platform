@@ -19,7 +19,7 @@ class SubscriptionOut(BaseModel):
     status: str
     start_date: date
     end_date: Optional[date] = None
-    user_quota_override: Optional[float] = None
+    user_quota_override: Optional[int] = None
     created_at: datetime
 
     class Config:
