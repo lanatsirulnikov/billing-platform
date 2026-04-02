@@ -31,3 +31,15 @@ class InvoiceItemOut(BaseModel):
     
     class Config:
         from_attributes = True
+
+class InvoiceItemSubscriptionOut(BaseModel):
+    id: str
+    customer_id: str
+    plan_id: str
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class InvoiceItemDetailOut(InvoiceItemOut):
+    subscription: Optional[InvoiceItemSubscriptionOut] = None

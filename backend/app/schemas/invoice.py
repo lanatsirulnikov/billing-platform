@@ -2,7 +2,7 @@ from datetime import datetime, date
 from decimal import Decimal
 from typing import Optional, Literal
 from pydantic import BaseModel
-
+from app.schemas.invoice_item import InvoiceItemOut, InvoiceItemDetailOut
 
 class InvoiceCreate(BaseModel):
     invoice_number: str
@@ -38,3 +38,16 @@ class InvoiceOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class InvoiceCustomerOut(BaseModel):
+    id: str
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class InvoiceDetailOut(InvoiceOut):
+    customer: InvoiceCustomerOut
+    items: list[InvoiceItemDetailOut]
