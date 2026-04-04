@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from datetime import datetime, timezone
 from app.db.session import SessionLocal
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
@@ -8,6 +9,7 @@ from app.models.customer import Customer
 from app.models.subscription import Subscription
 from app.schemas.invoice import InvoiceCreate, InvoiceOut, InvoiceDetailOut
 from app.schemas.invoice_item import InvoiceItemOut
+from app.schemas.invoice import InvoiceStatusUpdate
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
@@ -17,6 +19,15 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def is_valid_invoice_status_transition(current_status: str, new_status: str) -> bool:
+    allowed = {
+        "draft": {"open"},
+        "open": {"paid", "void"},
+        "paid": set(),
+        "void": set(),
+    }
+    return new_status in allowed[current_status]
 
 @router.post("", response_model=InvoiceOut)
 def create_invoice(input: InvoiceCreate, db: Session = Depends(get_db)):
@@ -117,3 +128,50 @@ def list_invoice_items(invoice_id: str, db: Session = Depends(get_db)):
         .where(InvoiceItem.invoice_id == invoice_id)
         .order_by(InvoiceItem.created_at.asc())
     ).all()
+
+@router.patch("/{invoice_id}/status", response_model=InvoiceOut)
+def update_invoice_status(
+    invoice_id: str,
+    input: InvoiceStatusUpdate,
+    db: Session = Depends(get_db),
+):
+    invoice = db.get(Invoice, invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="INVOICE_NOT_FOUND")
+
+    if not is_valid_invoice_status_transition(invoice.status, input.status):
+        raise HTTPException(status_code=400, detail="INVALID_INVOICE_STATUS_TRANSITION")
+
+    if input.status in {"open", "paid"}:
+        customer = db.get(Customer, invoice.customer_id)
+        if not customer:
+            raise HTTPException(status_code=400, detail="INVOICE_CUSTOMER_NOT_FOUND")
+        
+        items = db.scalars(
+            select(InvoiceItem).where(InvoiceItem.invoice_id == invoice.id)
+        ).all()
+
+        if not items:
+            raise HTTPException(status_code=400, detail="INVOICE_HAS_NO_ITEMS")
+        
+        items_total = sum(item.amount for item in items)
+        if invoice.total_amount != items_total:
+            raise HTTPException(status_code=400, detail="INVOICE_TOTAL_MISMATCH")
+        
+        if invoice.subtotal + invoice.tax_amount != invoice.total_amount:
+            raise HTTPException(status_code=400, detail="INVALID_INVOICE_TOTALS")
+    
+    invoice.status = input.status
+
+    if input.status == "open" and invoice.issued_at is None:
+        invoice.issued_at = datetime.now(timezone.utc)
+
+    if input.status == "paid" and invoice.paid_at is None:
+        invoice.paid_at = datetime.now(timezone.utc)
+
+    if input.status == "void" and invoice.voided_at is None:
+        invoice.voided_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(invoice)
+    return invoice

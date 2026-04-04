@@ -51,3 +51,7 @@ class InvoiceCustomerOut(BaseModel):
 class InvoiceDetailOut(InvoiceOut):
     customer: InvoiceCustomerOut
     items: list[InvoiceItemDetailOut]
+
+
+class InvoiceStatusUpdate(BaseModel):
+    status: Literal["draft", "open", "paid", "void"]
