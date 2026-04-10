@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
 
@@ -24,3 +24,5 @@ class Invoice(Base):
     paid_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     voided_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    items = relationship("InvoiceItem", back_populates="invoice")
