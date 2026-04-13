@@ -16,5 +16,6 @@ class Subscription(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    next_billing_date: Mapped[Optional[date]] = mapped_column(Date, nullable=False)
     user_quota_override: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

@@ -9,6 +9,7 @@ class SubscriptionCreate(BaseModel):
     status: Literal["active", "paused", "cancelled"] = "active"
     start_date: date
     end_date: Optional[date] = None
+    next_billing_date: date
     user_quota_override: Optional[float] = None
 
 
@@ -19,6 +20,7 @@ class SubscriptionOut(BaseModel):
     status: str
     start_date: date
     end_date: Optional[date] = None
+    next_billing_date: date
     user_quota_override: Optional[int] = None
     created_at: datetime
 

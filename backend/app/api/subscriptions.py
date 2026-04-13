@@ -32,6 +32,7 @@ def create_subscription(input: SubscriptionCreate, db: Session = Depends(get_db)
         status=input.status,
         start_date=input.start_date,
         end_date=input.end_date,
+        next_billing_date=input.next_billing_date,
         user_quota_override=input.user_quota_override
     )
     db.add(subscription)
@@ -71,3 +72,12 @@ def update_subscription_status(
     db.commit()
     db.refresh(subscription)
     return subscription
+
+@router.delete("/{subscription_id}")
+def delete_subscription(subscription_id: str, db: Session = Depends(get_db)):
+    subscription = db.get(Subscription, subscription_id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="SUBSCRIPTION_NOT_FOUND")
+    db.delete(subscription)
+    db.commit()
+    return {"ok": True}

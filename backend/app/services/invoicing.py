@@ -1,0 +1,100 @@
+from datetime import date
+from decimal import Decimal
+from dateutil.relativedelta import relativedelta
+from app.models.subscription import Subscription
+from app.models.invoice import Invoice
+from app.models.invoice_item import InvoiceItem
+from app.models.plan import Plan
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from collections import defaultdict
+
+def group_due_subscriptions_by_customer(db: Session, run_date: date):
+    grouped = defaultdict(list)
+
+    due_subscriptions = db.scalars(
+        select(Subscription).where(
+            Subscription.status == "active",
+            Subscription.next_billing_date <= run_date,
+        )
+    ).all()
+
+    for subscription in due_subscriptions:
+        grouped[subscription.customer_id].append(subscription)
+
+    return dict(grouped)
+
+def create_invoice(db: Session, run_date: date):
+    draft_invoices = db.scalars(
+        select(Invoice).where(Invoice.status == "draft")
+    ).all()
+
+    due_subscriptions_by_customer = group_due_subscriptions_by_customer(db, run_date)
+
+    for customer_id, subscriptions in due_subscriptions_by_customer.items():
+        invoice = next(
+            (draft_invoice for draft_invoice in draft_invoices if draft_invoice.customer_id == customer_id), 
+            None
+        )
+
+        if not invoice:
+            invoice = Invoice(
+                customer_id=customer_id,
+                status="draft",
+                due_date=run_date,
+                subtotal=Decimal("0.00"),
+                tax_amount=Decimal("0.00"),
+                total_amount=Decimal("0.00"),
+                currency="USD",
+            )
+            db.add(invoice)
+            db.flush()
+
+        for subscription in subscriptions:
+            plan = db.get(Plan, subscription.plan_id)
+            if not plan:
+                continue
+
+            billing_interval = get_billing_interval(plan.interval)
+
+            invoice_item = add_invoice_item(db, invoice, subscription, billing_interval, plan)
+            recalculate_totals(db, invoice, invoice_item)
+
+            subscription.next_billing_date = subscription.next_billing_date + billing_interval
+        
+        db.commit()
+
+def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, billing_interval, plan: Plan):
+    invoice_item_price = plan.price if plan else Decimal("0.00") # Fallback to 0 if plan is not found, should not happen if data integrity is maintained
+    
+    invoice_item = InvoiceItem(
+        invoice_id=invoice.id,
+        subscription_id=subscription.id,
+        item_type="subscription_base",
+        description=f"Subscription {subscription.id}",
+        period_start=subscription.next_billing_date - billing_interval,
+        period_end=subscription.next_billing_date,
+        quantity=1,
+        unit_price=invoice_item_price,
+        amount=1 * invoice_item_price
+    )
+    db.add(invoice_item)
+    db.flush()
+    return invoice_item
+
+def recalculate_totals(db: Session, invoice: Invoice, invoice_item: InvoiceItem):
+    subtotal = invoice.subtotal + invoice_item.amount if invoice.subtotal else invoice_item.amount
+    invoice.subtotal = subtotal
+    invoice.total_amount = invoice.subtotal + (invoice.tax_amount or Decimal("0.00"))
+    db.flush()
+
+def get_billing_interval(interval: str):
+    if interval == "monthly":
+        return relativedelta(months=1)
+    if interval == "yearly":
+        return relativedelta(years=1)
+    if interval == "weekly":
+        return relativedelta(weeks=1)
+    
+    raise ValueError(f"Unsupported billing interval: {interval}")   
+
