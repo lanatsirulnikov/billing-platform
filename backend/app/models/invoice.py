@@ -1,3 +1,4 @@
+from decimal import Decimal
 import uuid
 from datetime import datetime, date
 from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric
@@ -13,9 +14,9 @@ class Invoice(Base):
     invoice_number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     customer_id: Mapped[str] = mapped_column(CHAR(36), ForeignKey("customers.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft")
-    subtotal: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    tax_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    total_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    tax_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     billing_period_start: Mapped[date] = mapped_column(Date, nullable=True)
     billing_period_end: Mapped[date] = mapped_column(Date, nullable=True)

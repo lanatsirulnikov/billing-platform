@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 import uuid
 from datetime import datetime, date
@@ -19,8 +20,8 @@ class InvoiceItem(Base):
     period_start: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     period_end: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     invoice = relationship("Invoice", back_populates="items")
