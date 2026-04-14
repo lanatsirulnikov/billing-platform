@@ -1,5 +1,7 @@
 # app/api/customers.py
 from datetime import date
+from app.models.customer import Customer
+from app.models.plan import Plan
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -26,15 +28,25 @@ def is_valid_status_transition(current_status: str, new_status: str) -> bool:
 
 @router.post("", response_model=SubscriptionOut)
 def create_subscription(input: SubscriptionCreate, db: Session = Depends(get_db)):
+    customer = db.get(Customer, input.customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="CUSTOMER_NOT_FOUND")
+    
+    plan = db.get(Plan, input.plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="PLAN_NOT_FOUND")
+    
     subscription = Subscription(
         customer_id=input.customer_id,
         plan_id=input.plan_id,
+        price=plan.price,
         status=input.status,
         start_date=input.start_date,
         end_date=input.end_date,
         next_billing_date=input.next_billing_date,
         user_quota_override=input.user_quota_override
     )
+
     db.add(subscription)
     db.commit()
     db.refresh(subscription)
