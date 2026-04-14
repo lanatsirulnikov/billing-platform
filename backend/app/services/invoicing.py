@@ -56,15 +56,20 @@ def create_invoice(db: Session, run_date: date):
                 continue
 
             billing_interval = get_billing_interval(plan.interval)
+            period_end = subscription.next_billing_date
+            period_start = period_end - billing_interval
 
-            invoice_item = add_invoice_item(db, invoice, subscription, billing_interval, plan)
-            recalculate_totals(db, invoice, invoice_item)
+            existing_item = get_existing_subscription_base_item(db, subscription.id, period_start, period_end)
 
-            subscription.next_billing_date = subscription.next_billing_date + billing_interval
+            if not existing_item:
+                invoice_item = add_invoice_item(db, invoice, subscription, period_start, period_end, plan)
+                recalculate_totals(db, invoice, invoice_item)
+
+                subscription.next_billing_date = subscription.next_billing_date + billing_interval
         
         db.commit()
 
-def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, billing_interval, plan: Plan):
+def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, period_start: date, period_end: date, plan: Plan):
     invoice_item_price = plan.price if plan else Decimal("0.00") # Fallback to 0 if plan is not found, should not happen if data integrity is maintained
     
     invoice_item = InvoiceItem(
@@ -72,8 +77,8 @@ def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, 
         subscription_id=subscription.id,
         item_type="subscription_base",
         description=f"Subscription {subscription.id}",
-        period_start=subscription.next_billing_date - billing_interval,
-        period_end=subscription.next_billing_date,
+        period_start=period_start,
+        period_end=period_end,
         quantity=1,
         unit_price=invoice_item_price,
         amount=1 * invoice_item_price
@@ -96,5 +101,20 @@ def get_billing_interval(interval: str):
     if interval == "weekly":
         return relativedelta(weeks=1)
     
-    raise ValueError(f"Unsupported billing interval: {interval}")   
+    raise ValueError(f"Unsupported billing interval: {interval}")
+
+def get_existing_subscription_base_item(
+    db: Session,
+    subscription_id: str,
+    period_start: date,
+    period_end: date,
+):
+    return db.scalar(
+        select(InvoiceItem).where(
+            InvoiceItem.subscription_id == subscription_id,
+            InvoiceItem.item_type == "subscription_base",
+            InvoiceItem.period_start == period_start,
+            InvoiceItem.period_end == period_end,
+        )
+    )
 
