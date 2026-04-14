@@ -24,7 +24,7 @@ def group_due_subscriptions_by_customer(db: Session, run_date: date):
 
     return dict(grouped)
 
-def create_invoice(db: Session, run_date: date):
+def autogenerate_invoices(db: Session, run_date: date):
     draft_invoices = db.scalars(
         select(Invoice).where(Invoice.status == "draft")
     ).all()
@@ -62,7 +62,7 @@ def create_invoice(db: Session, run_date: date):
             existing_item = get_existing_subscription_base_item(db, subscription.id, period_start, period_end)
 
             if not existing_item:
-                invoice_item = add_invoice_item(db, invoice, subscription, period_start, period_end, plan)
+                invoice_item = add_invoice_item(db, invoice, subscription, period_start, period_end)
                 recalculate_totals(db, invoice, invoice_item)
 
                 subscription.next_billing_date = subscription.next_billing_date + billing_interval

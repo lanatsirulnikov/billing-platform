@@ -10,6 +10,8 @@ from app.models.subscription import Subscription
 from app.schemas.invoice import InvoiceCreate, InvoiceOut, InvoiceDetailOut
 from app.schemas.invoice_item import InvoiceItemOut
 from app.schemas.invoice import InvoiceStatusUpdate
+from datetime import date
+from app.services.invoicing import autogenerate_invoices
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
@@ -28,6 +30,11 @@ def is_valid_invoice_status_transition(current_status: str, new_status: str) -> 
         "void": set(),
     }
     return new_status in allowed[current_status]
+
+@router.post("/generate-due")
+def generate_due_invoices(db: Session = Depends(get_db)):
+    autogenerate_invoices(db, date.today())
+    return {"ok": True}
 
 @router.post("", response_model=InvoiceOut)
 def create_invoice(input: InvoiceCreate, db: Session = Depends(get_db)):
