@@ -69,9 +69,7 @@ def create_invoice(db: Session, run_date: date):
         
         db.commit()
 
-def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, period_start: date, period_end: date, plan: Plan):
-    invoice_item_price = plan.price if plan else Decimal("0.00") # Fallback to 0 if plan is not found, should not happen if data integrity is maintained
-    
+def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, period_start: date, period_end: date):    
     invoice_item = InvoiceItem(
         invoice_id=invoice.id,
         subscription_id=subscription.id,
@@ -80,8 +78,8 @@ def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, 
         period_start=period_start,
         period_end=period_end,
         quantity=1,
-        unit_price=invoice_item_price,
-        amount=1 * invoice_item_price
+        unit_price=subscription.price,
+        amount=1 * subscription.price
     )
     db.add(invoice_item)
     db.flush()

@@ -7,7 +7,6 @@ from pydantic import BaseModel
 class SubscriptionCreate(BaseModel):
     customer_id: str
     plan_id: str
-    price: Decimal
     status: Literal["active", "paused", "cancelled"] = "active"
     start_date: date
     end_date: Optional[date] = None
