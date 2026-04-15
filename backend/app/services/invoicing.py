@@ -25,49 +25,58 @@ def group_due_subscriptions_by_customer(db: Session, run_date: date):
     return dict(grouped)
 
 def autogenerate_invoices(db: Session, run_date: date):
-    draft_invoices = db.scalars(
-        select(Invoice).where(Invoice.status == "draft")
-    ).all()
+        due_subscriptions_by_customer = group_due_subscriptions_by_customer(db, run_date)
 
-    due_subscriptions_by_customer = group_due_subscriptions_by_customer(db, run_date)
+        for customer_id, subscriptions in due_subscriptions_by_customer.items():
+            try:
+                invoice = None
+                
+                for subscription in subscriptions:
+                    plan = db.get(Plan, subscription.plan_id)
+                    if not plan:
+                        continue
 
-    for customer_id, subscriptions in due_subscriptions_by_customer.items():
-        invoice = next(
-            (draft_invoice for draft_invoice in draft_invoices if draft_invoice.customer_id == customer_id), 
-            None
-        )
+                    billing_interval = get_billing_interval(plan.interval)
+                    period_end = subscription.next_billing_date
+                    period_start = period_end - billing_interval
 
-        if not invoice:
-            invoice = Invoice(
-                customer_id=customer_id,
-                status="draft",
-                due_date=run_date,
-                subtotal=Decimal("0.00"),
-                tax_amount=Decimal("0.00"),
-                total_amount=Decimal("0.00"),
-                currency="USD",
-            )
-            db.add(invoice)
-            db.flush()
+                    existing_item = get_existing_subscription_base_item(db, subscription.id, period_start, period_end)
 
-        for subscription in subscriptions:
-            plan = db.get(Plan, subscription.plan_id)
-            if not plan:
-                continue
+                    if existing_item and subscription.next_billing_date <= run_date:
+                        subscription.next_billing_date = subscription.next_billing_date + billing_interval
 
-            billing_interval = get_billing_interval(plan.interval)
-            period_end = subscription.next_billing_date
-            period_start = period_end - billing_interval
+                    if not existing_item:
+                        if invoice is None:
+                            invoice = db.scalar(
+                                select(Invoice).where(
+                                    Invoice.status == "draft",
+                                    Invoice.customer_id == customer_id,
+                                )
+                            )
 
-            existing_item = get_existing_subscription_base_item(db, subscription.id, period_start, period_end)
+                            if not invoice:
+                                invoice = Invoice(
+                                    customer_id=customer_id,
+                                    status="draft",
+                                    due_date=run_date,
+                                    subtotal=Decimal("0.00"),
+                                    tax_amount=Decimal("0.00"),
+                                    total_amount=Decimal("0.00"),
+                                    currency="USD",
+                                )
+                                db.add(invoice)
+                                db.flush()
 
-            if not existing_item:
-                invoice_item = add_invoice_item(db, invoice, subscription, period_start, period_end)
-                recalculate_totals(db, invoice, invoice_item)
+                        invoice_item = add_invoice_item(db, invoice, subscription, period_start, period_end)
+                        recalculate_totals(db, invoice, invoice_item)
 
-                subscription.next_billing_date = subscription.next_billing_date + billing_interval
-        
-        db.commit()
+                        subscription.next_billing_date = subscription.next_billing_date + billing_interval
+                
+                db.commit()
+
+            except Exception:
+                db.rollback()
+                raise
 
 def add_invoice_item(db: Session, invoice: Invoice, subscription: Subscription, period_start: date, period_end: date):    
     invoice_item = InvoiceItem(
