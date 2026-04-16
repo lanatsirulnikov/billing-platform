@@ -47,25 +47,7 @@ def autogenerate_invoices(db: Session, run_date: date):
 
                     if not existing_item:
                         if invoice is None:
-                            invoice = db.scalar(
-                                select(Invoice).where(
-                                    Invoice.status == "draft",
-                                    Invoice.customer_id == customer_id,
-                                )
-                            )
-
-                            if not invoice:
-                                invoice = Invoice(
-                                    customer_id=customer_id,
-                                    status="draft",
-                                    due_date=run_date,
-                                    subtotal=Decimal("0.00"),
-                                    tax_amount=Decimal("0.00"),
-                                    total_amount=Decimal("0.00"),
-                                    currency="USD",
-                                )
-                                db.add(invoice)
-                                db.flush()
+                            invoice = get_or_create_draft_invoice(db, customer_id, run_date)
 
                         invoice_item = add_invoice_item(db, invoice, subscription, period_start, period_end)
                         recalculate_totals(db, invoice, invoice_item)
@@ -125,3 +107,25 @@ def get_existing_subscription_base_item(
         )
     )
 
+def get_or_create_draft_invoice(db: Session, customer_id: str, run_date: date):
+    invoice = db.scalar(
+        select(Invoice).where(
+            Invoice.status == "draft",
+            Invoice.customer_id == customer_id,
+        )
+    )
+
+    if not invoice:
+        invoice = Invoice(
+            customer_id=customer_id,
+            status="draft",
+            due_date=run_date,
+            subtotal=Decimal("0.00"),
+            tax_amount=Decimal("0.00"),
+            total_amount=Decimal("0.00"),
+            currency="USD",
+        )
+        db.add(invoice)
+        db.flush()
+
+    return invoice
