@@ -40,11 +40,12 @@ def create_subscription(input: SubscriptionCreate, db: Session = Depends(get_db)
         customer_id=input.customer_id,
         plan_id=input.plan_id,
         price=plan.price,
+        user_quota_override=input.user_quota_override,
+        overage_user_price_override=input.overage_user_price_override,
         status=input.status,
         start_date=input.start_date,
         end_date=input.end_date,
         next_billing_date=input.next_billing_date,
-        user_quota_override=input.user_quota_override
     )
 
     db.add(subscription)

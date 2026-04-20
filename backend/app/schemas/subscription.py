@@ -7,11 +7,12 @@ from pydantic import BaseModel
 class SubscriptionCreate(BaseModel):
     customer_id: str
     plan_id: str
+    user_quota_override: Optional[int] = None
+    overage_user_price_override: Optional[Decimal] = None
     status: Literal["active", "paused", "cancelled"] = "active"
     start_date: date
     end_date: Optional[date] = None
     next_billing_date: date
-    user_quota_override: Optional[int] = None
 
 
 class SubscriptionOut(BaseModel):
@@ -19,11 +20,12 @@ class SubscriptionOut(BaseModel):
     customer_id: str
     plan_id: str
     price: Decimal
+    user_quota_override: Optional[int] = None
+    overage_user_price_override: Optional[Decimal] = None
     status: str
     start_date: date
     end_date: Optional[date] = None
     next_billing_date: date
-    user_quota_override: Optional[int] = None
     created_at: datetime
 
     class Config:

@@ -22,7 +22,13 @@ def create_plan(input: PlanCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="PLAN_NAME_EXISTS")
 
-    plan = Plan(name=input.name, price=input.price, interval=input.interval, user_quota=input.user_quota)
+    plan = Plan(
+        name=input.name,
+        price=input.price,
+        user_quota=input.user_quota,
+        overage_user_price=input.overage_user_price,
+        interval=input.interval
+    )
     db.add(plan)
     db.commit()
     db.refresh(plan)
