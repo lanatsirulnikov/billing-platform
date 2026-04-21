@@ -5,6 +5,7 @@ from app.models.subscription import Subscription
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.plan import Plan
+from app.models.invoice_counter import InvoiceCounter
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from collections import defaultdict
@@ -53,6 +54,7 @@ def autogenerate_invoices(db: Session, run_date: date):
                         periods["base_period_end"]
                     )
                     
+                    # Use a billing-event state model later
                     if existing_subscription_base_item and subscription.next_billing_date <= run_date:
                         subscription.next_billing_date = subscription.next_billing_date + billing_interval
 
@@ -189,7 +191,7 @@ def get_or_create_draft_invoice(db: Session, customer_id: str, run_date: date):
 
     if not invoice:
         invoice = Invoice(
-            invoice_number=4,
+            invoice_number=generate_invoice_number(db, run_date),
             customer_id=customer_id,
             status="draft",
             due_date=run_date,
@@ -252,3 +254,26 @@ def get_effective_overage_user_price(subscription: Subscription, plan: Plan) -> 
     if subscription.overage_user_price_override is not None:
         return subscription.overage_user_price_override
     return plan.overage_user_price
+
+def get_invoice_period_key(run_date: date) -> str:
+    return run_date.strftime("%Y%m")
+
+def generate_invoice_number(db: Session, run_date: date) -> str:
+    period_key = get_invoice_period_key(run_date)
+
+    counter = db.scalar(
+        select(InvoiceCounter)
+        .where(InvoiceCounter.period_key == period_key)
+        .with_for_update()
+    )
+
+    if not counter:
+        counter = InvoiceCounter(period_key=period_key, last_value=0)
+        db.add(counter)
+        db.flush()
+
+    counter.last_value += 1
+    db.flush()
+
+    invoice_number = f"INV-{period_key}-{counter.last_value:03d}"
+    return invoice_number

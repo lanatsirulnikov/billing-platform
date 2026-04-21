@@ -31,5 +31,3 @@ Invoicing:
 OR SECOND VARIANT:
 -we create draft invoice in any case and open all invoices during invoicing
 
-
-should old subscriptions always use the current plan price? implement price in subscription
