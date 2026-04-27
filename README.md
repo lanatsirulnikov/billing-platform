@@ -26,8 +26,6 @@ For each due subscription:
 3. create overage item only for that subscription and that previous period
 4. do not duplicate overage for the same subscription-period pair
 
-Invoicing:
--manual invoice create - check existing draft invoice - append item to existing => customer have only one draft invoice
-OR SECOND VARIANT:
--we create draft invoice in any case and open all invoices during invoicing
-
+- does not allow recording usage for the rest of the already-billed interval.
+- reject enter records for dates at or after that boundary
+- a late-submission cutoff rule.
