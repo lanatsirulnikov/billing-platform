@@ -17,11 +17,9 @@ def get_db():
 
 @router.post("", response_model=UsageRecordOut)
 def create_usage_record(input: UsageRecordCreate, db: Session = Depends(get_db)):
-    subscription_exists = db.scalar(select(UsageRecord).where(UsageRecord.subscription_id == input.subscription_id))
-    if not subscription_exists:
+    subscription = db.scalar(select(Subscription).where(Subscription.id == input.subscription_id))
+    if not subscription:
         raise HTTPException(status_code=404, detail="SUBSCRIPTION_NOT_FOUND")
-    
-    subscription = db.get(Subscription, input.subscription_id)
 
     if subscription.status == "cancelled" and input.recorded_on >= subscription.next_billing_date:
         raise HTTPException(status_code=400, detail="SUBSCRIPTION_CANCELLED")

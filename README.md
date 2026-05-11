@@ -26,6 +26,16 @@ For each due subscription:
 3. create overage item only for that subscription and that previous period
 4. do not duplicate overage for the same subscription-period pair
 
-- does not allow recording usage for the rest of the already-billed interval.
-- reject enter records for dates at or after that boundary
-- a late-submission cutoff rule.
+For a cancelled subscription:
+
+- do not create new base items for periods after cancellation
+- do allow usage_overage for the last completed overage period if it has not already been billed
+
+For paused subscription:
+
+Pause effective next cycle:
+paused means:
+- no new billing cycles start while paused
+- current cycle remains billed normally
+- no future base items until resumed
+(Pause effective immediately with proration implementation later)
