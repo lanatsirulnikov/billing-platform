@@ -2,7 +2,7 @@ from decimal import Decimal
 import uuid
 from datetime import datetime, date
 from typing import Optional
-from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric, Integer
+from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric, Integer, Boolean
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.session import Base
@@ -21,4 +21,5 @@ class Subscription(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     next_billing_date: Mapped[Optional[date]] = mapped_column(Date, nullable=False)
+    is_billable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

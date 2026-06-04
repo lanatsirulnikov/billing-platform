@@ -16,6 +16,7 @@ def group_due_subscriptions_by_customer(db: Session, run_date: date):
 
     due_subscriptions = db.scalars(
         select(Subscription).where(
+            Subscription.is_billable == True,
             Subscription.status.in_(["active", "paused", "cancelled"]),
             Subscription.next_billing_date <= run_date,
         )
@@ -39,66 +40,38 @@ def autogenerate_invoices(db: Session, run_date: date):
                         continue
 
                     billing_interval = get_billing_interval(plan.interval)
-                    
-                    if subscription.status == "active" or \
-                    (subscription.status == "cancelled" and subscription.end_date + billing_interval <= run_date) or \
-                    (subscription.status == "paused" and subscription.next_billing_date <= run_date < subscription.next_billing_date + billing_interval):
+                    periods = get_billing_periods(subscription.next_billing_date, billing_interval)
 
-                        periods = get_billing_periods(subscription.next_billing_date, billing_interval)
+                    existing_usage_overage_item = get_existing_usage_overage_item(
+                        db,
+                        subscription.id,
+                        periods
+                    )
+                    existing_subscription_base_item = get_existing_subscription_base_item(
+                        db,
+                        subscription.id,
+                        periods
+                    )
 
-                        existing_usage_overage_item = get_existing_usage_overage_item(
+                    if not existing_usage_overage_item:
+                        included_quota = get_included_quota(subscription, plan)
+                        actual_usage = get_max_usage_for_period(
                             db,
                             subscription.id,
                             periods
                         )
-                        existing_subscription_base_item = get_existing_subscription_base_item(
-                            db,
-                            subscription.id,
-                            periods
-                        )
+                        excess_users = calculate_excess_users(actual_usage, included_quota)
 
-                        if not existing_usage_overage_item:
-                            included_quota = get_included_quota(subscription, plan)
-                            actual_usage = get_max_usage_for_period(
-                                db,
-                                subscription.id,
-                                periods
-                            )
-                            excess_users = calculate_excess_users(actual_usage, included_quota)
-
-                            if excess_users > 0:
-                                if invoice is None:
-                                    invoice = get_or_create_draft_invoice(db, customer_id, run_date)
-
-                                values = build_invoice_item_values(subscription, plan, "usage_overage", excess_users)
-                                invoice_item = add_invoice_item(
-                                    db,
-                                    invoice,
-                                    subscription,
-                                    "usage_overage",
-                                    periods["period_start"],
-                                    periods["period_end"],
-                                    values["description"],
-                                    values["quantity"],
-                                    values["unit_price"],
-                                    values["amount"]
-                                )
-                                recalculate_totals(db, invoice, invoice_item)
-
-                        # Use a billing-event state model later
-                        if existing_subscription_base_item and subscription.next_billing_date <= run_date and subscription.status == "active":
-                            subscription.next_billing_date = subscription.next_billing_date + billing_interval
-
-                        if not existing_subscription_base_item:
+                        if excess_users > 0:
                             if invoice is None:
                                 invoice = get_or_create_draft_invoice(db, customer_id, run_date)
 
-                            values = build_invoice_item_values(subscription, plan, "subscription_base")
+                            values = build_invoice_item_values(subscription, plan, "usage_overage", excess_users)
                             invoice_item = add_invoice_item(
                                 db,
                                 invoice,
                                 subscription,
-                                "subscription_base",
+                                "usage_overage",
                                 periods["period_start"],
                                 periods["period_end"],
                                 values["description"],
@@ -108,8 +81,29 @@ def autogenerate_invoices(db: Session, run_date: date):
                             )
                             recalculate_totals(db, invoice, invoice_item)
 
-                            if subscription.status == "active":
-                                subscription.next_billing_date = subscription.next_billing_date + billing_interval
+                    # Use a billing-event state model later
+                    if existing_subscription_base_item:
+                        finalize_subscription_cycle(subscription, billing_interval)
+                    else:
+                        if invoice is None:
+                            invoice = get_or_create_draft_invoice(db, customer_id, run_date)
+
+                        values = build_invoice_item_values(subscription, plan, "subscription_base")
+                        invoice_item = add_invoice_item(
+                            db,
+                            invoice,
+                            subscription,
+                            "subscription_base",
+                            periods["period_start"],
+                            periods["period_end"],
+                            values["description"],
+                            values["quantity"],
+                            values["unit_price"],
+                            values["amount"]
+                        )
+                        recalculate_totals(db, invoice, invoice_item)
+
+                        finalize_subscription_cycle(subscription, billing_interval)
                 
                 db.commit()
 
@@ -173,6 +167,12 @@ def get_existing_subscription_base_item(
             InvoiceItem.period_end == periods["period_end"],
         )
     )
+
+def finalize_subscription_cycle(subscription: Subscription, billing_interval):
+    if subscription.status == "active":
+        subscription.next_billing_date = subscription.next_billing_date + billing_interval
+    elif subscription.status in {"paused", "cancelled"}:
+        subscription.is_billable = False
 
 def get_existing_usage_overage_item(
     db: Session,

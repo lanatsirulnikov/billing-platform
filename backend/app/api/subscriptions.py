@@ -46,6 +46,7 @@ def create_subscription(input: SubscriptionCreate, db: Session = Depends(get_db)
         start_date=input.start_date,
         end_date=input.end_date,
         next_billing_date=input.next_billing_date,
+        is_billable=True,
     )
 
     db.add(subscription)

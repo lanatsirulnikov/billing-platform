@@ -26,6 +26,7 @@ class SubscriptionOut(BaseModel):
     start_date: date
     end_date: Optional[date] = None
     next_billing_date: date
+    is_billable: bool
     created_at: datetime
 
     class Config:
