@@ -16,8 +16,7 @@ def group_due_subscriptions_by_customer(db: Session, run_date: date):
 
     due_subscriptions = db.scalars(
         select(Subscription).where(
-            Subscription.is_billable == True,
-            Subscription.status.in_(["active", "paused", "cancelled"]),
+            Subscription.is_billable.is_(True),
             Subscription.next_billing_date <= run_date,
         )
     ).all()
@@ -37,20 +36,21 @@ def autogenerate_invoices(db: Session, run_date: date):
                 for subscription in subscriptions:
                     plan = db.get(Plan, subscription.plan_id)
                     if not plan:
+                        subscription.is_billable = False
+                        continue
                         continue
 
                     billing_interval = get_billing_interval(plan.interval)
-                    periods = get_billing_periods(subscription.next_billing_date, billing_interval)
-
+                    current_cycle = get_billing_periods(subscription.next_billing_date, billing_interval)
                     existing_usage_overage_item = get_existing_usage_overage_item(
                         db,
                         subscription.id,
-                        periods
+                        current_cycle
                     )
                     existing_subscription_base_item = get_existing_subscription_base_item(
                         db,
                         subscription.id,
-                        periods
+                        current_cycle
                     )
 
                     if not existing_usage_overage_item:
@@ -58,7 +58,7 @@ def autogenerate_invoices(db: Session, run_date: date):
                         actual_usage = get_max_usage_for_period(
                             db,
                             subscription.id,
-                            periods
+                            current_cycle
                         )
                         excess_users = calculate_excess_users(actual_usage, included_quota)
 
@@ -72,8 +72,8 @@ def autogenerate_invoices(db: Session, run_date: date):
                                 invoice,
                                 subscription,
                                 "usage_overage",
-                                periods["period_start"],
-                                periods["period_end"],
+                                current_cycle["period_start"],
+                                current_cycle["period_end"],
                                 values["description"],
                                 values["quantity"],
                                 values["unit_price"],
@@ -94,8 +94,8 @@ def autogenerate_invoices(db: Session, run_date: date):
                             invoice,
                             subscription,
                             "subscription_base",
-                            periods["period_start"],
-                            periods["period_end"],
+                            current_cycle["period_start"],
+                            current_cycle["period_end"],
                             values["description"],
                             values["quantity"],
                             values["unit_price"],
@@ -157,18 +157,19 @@ def get_billing_interval(interval: str):
 def get_existing_subscription_base_item(
     db: Session,
     subscription_id: str,
-    periods: dict,
+    current_cycle: dict,
 ):
     return db.scalar(
         select(InvoiceItem).where(
             InvoiceItem.subscription_id == subscription_id,
             InvoiceItem.item_type == "subscription_base",
-            InvoiceItem.period_start == periods["period_start"],
-            InvoiceItem.period_end == periods["period_end"],
+            InvoiceItem.period_start == current_cycle["period_start"],
+            InvoiceItem.period_end == current_cycle["period_end"],
         )
     )
 
-def finalize_subscription_cycle(subscription: Subscription, billing_interval):
+def finalize_subscription_cycle(subscription: Subscription, billing_interval) -> None:
+    # Paused/cancelled subscriptions finish the current accounted cycle, then stop billing.
     if subscription.status == "active":
         subscription.next_billing_date = subscription.next_billing_date + billing_interval
     elif subscription.status in {"paused", "cancelled"}:
@@ -177,14 +178,14 @@ def finalize_subscription_cycle(subscription: Subscription, billing_interval):
 def get_existing_usage_overage_item(
     db: Session,
     subscription_id: str,
-    periods: dict
+    current_cycle: dict
 ):
     return db.scalar(
         select(InvoiceItem).where(
             InvoiceItem.subscription_id == subscription_id,
             InvoiceItem.item_type == "usage_overage",
-            InvoiceItem.period_start == periods["period_start"],
-            InvoiceItem.period_end == periods["period_end"],
+            InvoiceItem.period_start == current_cycle["period_start"],
+            InvoiceItem.period_end == current_cycle["period_end"],
         )
     )
 
@@ -280,12 +281,12 @@ def generate_invoice_number(db: Session, run_date: date) -> str:
     invoice_number = f"INV-{period_key}-{counter.last_value:03d}"
     return invoice_number
 
-def get_max_usage_for_period(db, subscription_id: str, periods: dict) -> int:
+def get_max_usage_for_period(db, subscription_id: str, current_cycle: dict) -> int:
     max_usage = db.scalar(
         select(func.max(UsageRecord.active_user_count)).where(
             UsageRecord.subscription_id == subscription_id,
-            UsageRecord.recorded_on >= periods["period_start"],
-            UsageRecord.recorded_on < periods["period_end"],
+            UsageRecord.recorded_on >= current_cycle["period_start"],
+            UsageRecord.recorded_on < current_cycle["period_end"],
         )
     )
 
