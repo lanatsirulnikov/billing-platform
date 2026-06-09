@@ -38,7 +38,6 @@ def autogenerate_invoices(db: Session, run_date: date):
                     if not plan:
                         subscription.is_billable = False
                         continue
-                        continue
 
                     billing_interval = get_billing_interval(plan.interval)
                     current_cycle = get_billing_periods(subscription.next_billing_date, billing_interval)
@@ -250,8 +249,8 @@ def calculate_excess_users(actual_usage: int, included_quota: int) -> int:
 
 def get_included_quota(subscription: Subscription, plan: Plan) -> int:
     if subscription.user_quota_override is not None and subscription.user_quota_override != 0:
-        return subscription.user_quota_override
-    return plan.user_quota
+        return int(subscription.user_quota_override)
+    return int(plan.user_quota)
 
 def get_effective_overage_user_price(subscription: Subscription, plan: Plan) -> Decimal:
     if subscription.overage_user_price_override is not None and subscription.overage_user_price_override != Decimal("0.00"):
