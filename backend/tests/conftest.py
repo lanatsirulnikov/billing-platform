@@ -22,24 +22,29 @@ from app.api.invoices import get_db as invoices_get_db
 from app.api.invoice_items import get_db as invoice_items_get_db
 from app.api.usage_records import get_db as usage_records_get_db
 
-TEST_DB_URL = "sqlite:///./test_billing.db"
-TEST_DB_FILE = "test_billing.db"
-
-engine = create_engine(
-    TEST_DB_URL,
-    connect_args={"check_same_thread": False},
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TEST_DB_URL = None
+TEST_DB_FILE = None
+engine = None
+TestingSessionLocal = None
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_database() -> Generator[None, None, None]:
-    if os.path.exists(TEST_DB_FILE):
-        os.remove(TEST_DB_FILE)
+def setup_database(tmp_path_factory) -> Generator[None, None, None]:
+    global TEST_DB_URL, TEST_DB_FILE, engine, TestingSessionLocal
+
+    db_dir = tmp_path_factory.mktemp("billing-tests")
+    TEST_DB_FILE = db_dir / "test_billing.db"
+    TEST_DB_URL = f"sqlite:///{TEST_DB_FILE}"
+
+    engine = create_engine(
+        TEST_DB_URL,
+        connect_args={"check_same_thread": False},
+    )
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
-    if os.path.exists(TEST_DB_FILE):
-        os.remove(TEST_DB_FILE)
+    engine.dispose()
 
 @pytest.fixture
 def db_session():
