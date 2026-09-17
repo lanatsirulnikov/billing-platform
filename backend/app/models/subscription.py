@@ -21,5 +21,7 @@ class Subscription(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     next_billing_date: Mapped[Optional[date]] = mapped_column(Date, nullable=False)
+    # TODO: Add billing_anchor_day to preserve month-end billing dates like the 29th, 30th, or 31st.
+    # billing_anchor_day: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     is_billable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
