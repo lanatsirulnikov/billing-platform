@@ -1,6 +1,4 @@
-import os
 import sys
-from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -22,35 +20,33 @@ from app.api.invoices import get_db as invoices_get_db
 from app.api.invoice_items import get_db as invoice_items_get_db
 from app.api.usage_records import get_db as usage_records_get_db
 
-TEST_DB_URL = None
-TEST_DB_FILE = None
-engine = None
-TestingSessionLocal = None
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_database(tmp_path_factory) -> Generator[None, None, None]:
-    global TEST_DB_URL, TEST_DB_FILE, engine, TestingSessionLocal
-
+@pytest.fixture(scope="session")
+def test_engine(tmp_path_factory):
     db_dir = tmp_path_factory.mktemp("billing-tests")
-    TEST_DB_FILE = db_dir / "test_billing.db"
-    TEST_DB_URL = f"sqlite:///{TEST_DB_FILE}"
-
+    db_file = db_dir / "test_billing.db"
     engine = create_engine(
-        TEST_DB_URL,
+        f"sqlite:///{db_file}",
         connect_args={"check_same_thread": False},
     )
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+    yield engine
     engine.dispose()
 
+
+@pytest.fixture(scope="session")
+def testing_session_factory(test_engine):
+    return sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(test_engine):
+    Base.metadata.create_all(bind=test_engine)
+    yield
+    Base.metadata.drop_all(bind=test_engine)
+
 @pytest.fixture
-def db_session():
-    connection = engine.connect()
+def db_session(test_engine, testing_session_factory):
+    connection = test_engine.connect()
     transaction = connection.begin()
-    session = TestingSessionLocal(bind=connection)
+    session = testing_session_factory(bind=connection)
 
     try:
         yield session
