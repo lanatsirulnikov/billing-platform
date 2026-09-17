@@ -40,7 +40,7 @@ def autogenerate_invoices(db: Session, run_date: date):
                         continue
 
                     billing_interval = get_billing_interval(plan.interval)
-                    current_cycle = get_billing_periods(subscription.next_billing_date, billing_interval)
+                    current_cycle = get_billing_periods(subscription, billing_interval)
                     existing_usage_overage_item = get_existing_usage_overage_item(
                         db,
                         subscription.id,
@@ -212,9 +212,12 @@ def get_or_create_draft_invoice(db: Session, customer_id: str, run_date: date):
 
     return invoice
 
-def get_billing_periods(next_billing_date: date, billing_interval):
-    period_end = next_billing_date
+def get_billing_periods(subscription: Subscription, billing_interval):
+    period_end = subscription.next_billing_date
     period_start = period_end - billing_interval
+
+    if subscription.start_date > period_start:
+        period_start = subscription.start_date
 
     return {
         "period_start": period_start,
