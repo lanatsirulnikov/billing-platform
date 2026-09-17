@@ -132,3 +132,19 @@ paused means:
 - current cycle remains billed normally
 - no future base items until resumed
 (Pause effective immediately with proration implementation later)
+
+### Override values
+
+For subscription-level quota and overage price overrides:
+
+- `None` means use the plan value.
+- `0` / `0.00` also means use the plan value.
+- Positive values override the plan value.
+
+This keeps accidental zero values from creating unrealistic billing behavior, such as zero included users or free overage.
+
+### Overdue subscriptions
+
+A generation run currently processes one billing interval per due subscription. If a subscription is multiple periods overdue, repeated generation runs are required to fully catch up.
+
+Future improvement: support full overdue catch-up in one run by generating invoice items for each missed billing period before advancing the subscription beyond the run date.

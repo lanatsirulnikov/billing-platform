@@ -169,6 +169,8 @@ def get_existing_subscription_base_item(
 
 def finalize_subscription_cycle(subscription: Subscription, billing_interval) -> None:
     # Paused/cancelled subscriptions finish the current accounted cycle, then stop billing.
+    # TODO: Support full overdue catch-up by generating invoice items for each missed billing period.
+    # Current behavior processes one billing period per generation run.
     if subscription.status == "active":
         subscription.next_billing_date = subscription.next_billing_date + billing_interval
     elif subscription.status in {"paused", "cancelled"}:

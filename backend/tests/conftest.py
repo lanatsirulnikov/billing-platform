@@ -34,7 +34,11 @@ def test_engine(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def testing_session_factory(test_engine):
-    return sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    return sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=test_engine,
+    )
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database(test_engine):
@@ -44,16 +48,17 @@ def setup_database(test_engine):
 
 @pytest.fixture
 def db_session(test_engine, testing_session_factory):
-    connection = test_engine.connect()
-    transaction = connection.begin()
-    session = testing_session_factory(bind=connection)
+    Base.metadata.drop_all(bind=test_engine)
+    Base.metadata.create_all(bind=test_engine)
+
+    session = testing_session_factory()
 
     try:
         yield session
     finally:
         session.close()
-        transaction.rollback()
-        connection.close()
+        Base.metadata.drop_all(bind=test_engine)
+        Base.metadata.create_all(bind=test_engine)
 
 @pytest.fixture
 def client(db_session):
