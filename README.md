@@ -1,5 +1,7 @@
 # billing-platform
 
+[![CI](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml)
+
 ## Local setup
 
 ### Requirements
