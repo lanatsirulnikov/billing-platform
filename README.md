@@ -148,3 +148,36 @@ This keeps accidental zero values from creating unrealistic billing behavior, su
 A generation run currently processes one billing interval per due subscription. If a subscription is multiple periods overdue, repeated generation runs are required to fully catch up.
 
 Future improvement: support full overdue catch-up in one run by generating invoice items for each missed billing period before advancing the subscription beyond the run date.
+
+## Docker setup
+
+From the repository root:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+In another terminal, apply database migrations:
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+Run backend tests inside the container:
+
+```bash
+docker compose exec backend pytest -q
+```
+
+Check the API health endpoint:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
