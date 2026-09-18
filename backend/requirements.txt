@@ -4,6 +4,7 @@ annotated-types==0.7.0
 anyio==4.12.1
 certifi==2026.2.25
 click==8.1.8
+email-validator==2.3.0
 exceptiongroup==1.3.1
 fastapi==0.128.8
 h11==0.16.0
@@ -15,12 +16,15 @@ iniconfig==2.1.0
 Mako==1.3.10
 MarkupSafe==3.0.3
 packaging==26.0
+psycopg[binary]==3.2.13
 pluggy==1.6.0
 pydantic==2.12.5
 pydantic-settings==2.11.0
 pydantic_core==2.41.5
 Pygments==2.19.2
 pytest==8.4.2
+PyMySQL==1.1.2
+python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 PyYAML==6.0.3
 SQLAlchemy==2.0.48
