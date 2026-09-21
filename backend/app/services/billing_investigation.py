@@ -50,8 +50,8 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         f"Current invoice total: {current_total}",
         f"Previous invoice total: {previous_total}",
         f"Difference: {difference}",
-        f"Current invoice has usage overage item: {current_overage}",
-        f"Previous invoice has usage overage item: {previous_overage}",
+        f"Current usage overage total: {current_overage}",
+        f"Previous usage overage total: {previous_overage}",
     ]
 
     summary = f"Invoice total changed by {difference}."

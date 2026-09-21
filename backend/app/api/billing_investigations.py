@@ -6,16 +6,9 @@ from app.services.billing_investigation import (
     InvoiceInvestigationNotFound,
     investigate_invoice_increase,
 )
-from app.db.session import SessionLocal
+from app.api.customers import get_db
 
 router = APIRouter(prefix="/billing-investigations", tags=["billing-investigations"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/invoice-increase", response_model=InvoiceIncreaseOut)
 def invoice_increase(input: InvoiceIncreaseIn, db: Session = Depends(get_db)):
