@@ -135,6 +135,52 @@ paused means:
 - no future base items until resumed
 (Pause effective immediately with proration implementation later)
 
+## Billing Investigation Assistant
+
+The backend includes a read-only billing investigation endpoint for answering:
+
+> Why did this customer's invoice increase this month?
+
+It compares two invoices for the same customer and returns a short explanation plus the facts used to produce it. The endpoint does not modify invoices, subscriptions, plans, or usage records.
+
+Endpoint:
+
+```http
+POST /billing-investigations/invoice-increase
+```
+
+Example request:
+```json
+{
+  "customer_id": "customer-id",
+  "previous_invoice_id": "previous-invoice-id",
+  "current_invoice_id": "current-invoice-id"
+}
+```
+Example response:
+```json
+{
+  "summary": "Invoice increased by 25.00. Usage overage increased by 25.00.",
+  "current_total": "124.00",
+  "previous_total": "99.00",
+  "difference": "25.00",
+  "facts": [
+    "Current invoice total: 124.00",
+    "Previous invoice total: 99.00",
+    "Difference: 25.00",
+    "Current subscription base total: 99.00",
+    "Previous subscription base total: 99.00",
+    "Current usage overage total: 25.00",
+    "Previous usage overage total: 0"
+  ]
+}
+```
+Currently supported explanations:
+- usage overage increased
+- subscription base charges increased
+- invoice total did not increase
+- missing invoice and wrong-customer validation errors
+
 ### Override values
 
 For subscription-level quota and overage price overrides:
