@@ -59,7 +59,12 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
 
     # TODO: Support multi-factor explanations when several charge categories increase in the same invoice.
     # For now, the summary reports the strongest single reason handled by this service.
-    summary = f"Invoice total changed by {difference}."
+    if difference == 0:
+        summary = "Invoice total did not increase."
+    elif difference < 0:
+        summary = f"Invoice total decreased by {abs(difference)}."
+    else:
+        summary = f"Invoice total changed by {difference}."
 
     if current_base > previous_base:
         summary = f"Invoice increased by {difference}. Subscription base charges increased by {current_base - previous_base}."
