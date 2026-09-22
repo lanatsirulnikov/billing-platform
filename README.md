@@ -150,6 +150,7 @@ POST /billing-investigations/invoice-increase
 ```
 
 Example request:
+
 ```json
 {
   "customer_id": "customer-id",
@@ -158,6 +159,7 @@ Example request:
 }
 ```
 Example response:
+
 ```json
 {
   "summary": "Invoice increased by 25.00. Usage overage increased by 25.00.",
@@ -172,9 +174,18 @@ Example response:
     "Previous subscription base total: 99.00",
     "Current usage overage total: 25.00",
     "Previous usage overage total: 0"
-  ]
+  ],
+  "tool_calls": [
+  "fetch_current_invoice",
+  "fetch_previous_invoice",
+  "compare_invoice_totals",
+  "fetch_current_invoice_items",
+  "fetch_previous_invoice_items",
+  "compare_charge_categories"
+]
 }
 ```
+
 Currently supported explanations:
 - usage overage increased
 - subscription base charges increased

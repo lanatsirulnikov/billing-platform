@@ -16,6 +16,8 @@ class InvoiceInvestigationInvalidInput(Exception):
 
 
 def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> InvoiceIncreaseOut:
+    tool_calls = ["fetch_current_invoice", "fetch_previous_invoice"]
+
     invoices = db.scalars(
         select(Invoice).where(
             Invoice.id.in_([input.current_invoice_id, input.previous_invoice_id])
@@ -34,13 +36,16 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     current_total = current_invoice.total_amount
     previous_total = previous_invoice.total_amount
     difference = current_total - previous_total
+    tool_calls.append("compare_invoice_totals")
 
     current_items = db.scalars(
         select(InvoiceItem).where(InvoiceItem.invoice_id == current_invoice.id)
     ).all()
+    tool_calls.append("fetch_current_invoice_items")
     previous_items = db.scalars(
         select(InvoiceItem).where(InvoiceItem.invoice_id == previous_invoice.id)
     ).all()
+    tool_calls.append("fetch_previous_invoice_items")
 
     current_overage = sum(item.amount for item in current_items if item.item_type == "usage_overage")
     previous_overage = sum(item.amount for item in previous_items if item.item_type == "usage_overage")
@@ -72,6 +77,8 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     if current_overage > previous_overage:
         summary = f"Invoice increased by {difference}. Usage overage increased by {current_overage - previous_overage}."
 
+    tool_calls.append("compare_charge_categories")
+
 
     return InvoiceIncreaseOut(
         summary=summary,
@@ -79,4 +86,5 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         previous_total=previous_total,
         difference=difference,
         facts=facts,
+        tool_calls=tool_calls,
     )

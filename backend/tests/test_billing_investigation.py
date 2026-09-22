@@ -92,6 +92,12 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
     assert "Usage overage increased by 25.00" in data["summary"]
     assert "Current usage overage total: 25.00" in data["facts"]
     assert "Previous usage overage total: 0" in data["facts"]
+    assert "fetch_current_invoice" in data["tool_calls"]
+    assert "fetch_previous_invoice" in data["tool_calls"]
+    assert "compare_invoice_totals" in data["tool_calls"]
+    assert "fetch_current_invoice_items" in data["tool_calls"]
+    assert "fetch_previous_invoice_items" in data["tool_calls"]
+    assert "compare_charge_categories" in data["tool_calls"]
 
 def test_missing_invoice(client, db_session):
     customer = Customer(
@@ -304,6 +310,8 @@ def test_invoice_increase_investigation_explains_new_subscription_charge(client,
     assert "Subscription base charges increased by 50.00" in data["summary"]
     assert "Current invoice total: 149.00" in data["facts"]
     assert "Previous invoice total: 99.00" in data["facts"]
+    assert "fetch_current_invoice" in data["tool_calls"]
+    assert "compare_charge_categories" in data["tool_calls"]
     
 def test_no_invoice_increase(client, db_session):
     customer = Customer(
@@ -378,4 +386,4 @@ def test_no_invoice_increase(client, db_session):
     assert "Invoice total did not increase." in data["summary"]
     assert "Current invoice total: 99.00" in data["facts"]
     assert "Previous invoice total: 99.00" in data["facts"]
-
+    assert "fetch_current_invoice" in data["tool_calls"]

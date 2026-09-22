@@ -14,3 +14,4 @@ class InvoiceIncreaseOut(BaseModel):
     previous_total: Decimal
     difference: Decimal
     facts: list[str]
+    tool_calls: list[str]
