@@ -44,17 +44,25 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
 
     current_overage = sum(item.amount for item in current_items if item.item_type == "usage_overage")
     previous_overage = sum(item.amount for item in previous_items if item.item_type == "usage_overage")
-
+    current_base = sum(item.amount for item in current_items if item.item_type == "subscription_base")
+    previous_base = sum(item.amount for item in previous_items if item.item_type == "subscription_base")
 
     facts = [
         f"Current invoice total: {current_total}",
         f"Previous invoice total: {previous_total}",
         f"Difference: {difference}",
+        f"Current subscription base total: {current_base}",
+        f"Previous subscription base total: {previous_base}",
         f"Current usage overage total: {current_overage}",
         f"Previous usage overage total: {previous_overage}",
     ]
 
+    # TODO: Support multi-factor explanations when several charge categories increase in the same invoice.
+    # For now, the summary reports the strongest single reason handled by this service.
     summary = f"Invoice total changed by {difference}."
+
+    if current_base > previous_base:
+        summary = f"Invoice increased by {difference}. Subscription base charges increased by {current_base - previous_base}."
 
     if current_overage > previous_overage:
         summary = f"Invoice increased by {difference}. Usage overage increased by {current_overage - previous_overage}."
