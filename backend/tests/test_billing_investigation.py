@@ -85,6 +85,7 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
 
     assert response.status_code == 200
     data = response.json()
+    tool_names = [tool["name"] for tool in data["tool_calls"]]
 
     assert data["current_total"] == "124.00"
     assert data["previous_total"] == "99.00"
@@ -92,12 +93,12 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
     assert "Usage overage increased by 25.00" in data["summary"]
     assert "Current usage overage total: 25.00" in data["facts"]
     assert "Previous usage overage total: 0" in data["facts"]
-    assert "fetch_current_invoice" in data["tool_calls"]
-    assert "fetch_previous_invoice" in data["tool_calls"]
-    assert "compare_invoice_totals" in data["tool_calls"]
-    assert "fetch_current_invoice_items" in data["tool_calls"]
-    assert "fetch_previous_invoice_items" in data["tool_calls"]
-    assert "compare_charge_categories" in data["tool_calls"]
+    assert "fetch_current_invoice" in tool_names
+    assert "fetch_previous_invoice" in tool_names
+    assert "compare_invoice_totals" in tool_names
+    assert "fetch_current_invoice_items" in tool_names
+    assert "fetch_previous_invoice_items" in tool_names
+    assert "compare_charge_categories" in tool_names
 
 def test_missing_invoice(client, db_session):
     customer = Customer(
@@ -305,13 +306,14 @@ def test_invoice_increase_investigation_explains_new_subscription_charge(client,
 
     assert response.status_code == 200
     data = response.json()
+    tool_names = [tool["name"] for tool in data["tool_calls"]]
 
     assert data["difference"] == "50.00"
     assert "Subscription base charges increased by 50.00" in data["summary"]
     assert "Current invoice total: 149.00" in data["facts"]
     assert "Previous invoice total: 99.00" in data["facts"]
-    assert "fetch_current_invoice" in data["tool_calls"]
-    assert "compare_charge_categories" in data["tool_calls"]
+    assert "fetch_current_invoice" in tool_names
+    assert "compare_charge_categories" in tool_names
     
 def test_no_invoice_increase(client, db_session):
     customer = Customer(
@@ -381,9 +383,10 @@ def test_no_invoice_increase(client, db_session):
 
     assert response.status_code == 200
     data = response.json()
+    tool_names = [tool["name"] for tool in data["tool_calls"]]
 
     assert data["difference"] == "0.00"
     assert "Invoice total did not increase." in data["summary"]
     assert "Current invoice total: 99.00" in data["facts"]
     assert "Previous invoice total: 99.00" in data["facts"]
-    assert "fetch_current_invoice" in data["tool_calls"]
+    assert "fetch_current_invoice" in tool_names

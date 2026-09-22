@@ -15,7 +15,7 @@ class InvoiceInvestigationInvalidInput(Exception):
 
 
 def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> InvoiceIncreaseOut:
-    tool_calls = ["fetch_current_invoice", "fetch_previous_invoice"]
+    tool_calls = []
 
     invoices = db.scalars(
         select(Invoice).where(
@@ -24,7 +24,26 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     ).all()
 
     current_invoice = next((inv for inv in invoices if inv.id == input.current_invoice_id), None)
+    tool_calls.append({
+        "name": "fetch_current_invoice",
+        "status": "success" if current_invoice else "failed",
+        "result": (
+            f"Found invoice {current_invoice.invoice_number}"
+            if current_invoice
+            else "Current invoice not found"
+        ),
+    })
+
     previous_invoice = next((inv for inv in invoices if inv.id == input.previous_invoice_id), None)
+    tool_calls.append({
+        "name": "fetch_previous_invoice",
+        "status": "success" if previous_invoice else "failed",
+        "result": (
+            f"Found invoice {previous_invoice.invoice_number}"
+            if previous_invoice
+            else "Previous invoice not found"
+        ),
+    })
 
     if not current_invoice or not previous_invoice:
         raise InvoiceInvestigationNotFound("One or both invoices not found")
@@ -39,16 +58,29 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     current_total = current_invoice.total_amount
     previous_total = previous_invoice.total_amount
     difference = current_total - previous_total
-    tool_calls.append("compare_invoice_totals")
+    tool_calls.append({
+        "name": "compare_invoice_totals",
+        "status": "success",
+        "result": f"Current total: {current_total}, Previous total: {previous_total}, Difference: {difference}",
+    })
 
     current_items = db.scalars(
         select(InvoiceItem).where(InvoiceItem.invoice_id == current_invoice.id)
     ).all()
-    tool_calls.append("fetch_current_invoice_items")
+    tool_calls.append({
+        "name": "fetch_current_invoice_items",
+        "status": "success",
+        "result": f"Found {len(current_items)} invoice items",
+    })
+    
     previous_items = db.scalars(
         select(InvoiceItem).where(InvoiceItem.invoice_id == previous_invoice.id)
     ).all()
-    tool_calls.append("fetch_previous_invoice_items")
+    tool_calls.append({
+        "name": "fetch_previous_invoice_items",
+        "status": "success",
+        "result": f"Found {len(previous_items)} invoice items",
+    })
 
     current_overage = sum(item.amount for item in current_items if item.item_type == "usage_overage")
     previous_overage = sum(item.amount for item in previous_items if item.item_type == "usage_overage")
@@ -86,7 +118,11 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
             f"Usage overage increased by {current_overage - previous_overage}."
         )
 
-    tool_calls.append("compare_charge_categories")
+    tool_calls.append({
+        "name": "compare_charge_categories",
+        "status": "success",
+        "result": f"Current base: {current_base}, Previous base: {previous_base}, Current overage: {current_overage}, Previous overage: {previous_overage}",
+    })
 
 
     return InvoiceIncreaseOut(
