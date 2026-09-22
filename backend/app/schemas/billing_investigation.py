@@ -1,7 +1,7 @@
-
 from decimal import Decimal
 
 from pydantic import BaseModel
+
 
 class InvoiceIncreaseIn(BaseModel):
     customer_id: str

@@ -1,4 +1,3 @@
-
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -30,8 +29,12 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     if not current_invoice or not previous_invoice:
         raise InvoiceInvestigationNotFound("One or both invoices not found")
 
-    if current_invoice.customer_id != input.customer_id or previous_invoice.customer_id != input.customer_id:
-        raise InvoiceInvestigationInvalidInput("Invoices must belong to the requested customer")
+    if (current_invoice.customer_id != input.customer_id
+        or previous_invoice.customer_id != input.customer_id
+    ):
+        raise InvoiceInvestigationInvalidInput(
+            "Invoices must belong to the requested customer"
+        )
 
     current_total = current_invoice.total_amount
     previous_total = previous_invoice.total_amount
@@ -72,10 +75,16 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         summary = f"Invoice total changed by {difference}."
 
     if current_base > previous_base:
-        summary = f"Invoice increased by {difference}. Subscription base charges increased by {current_base - previous_base}."
+        summary = (
+            f"Invoice increased by {difference}. "
+            f"Subscription base charges increased by {current_base - previous_base}."
+        )
 
     if current_overage > previous_overage:
-        summary = f"Invoice increased by {difference}. Usage overage increased by {current_overage - previous_overage}."
+        summary = (
+            f"Invoice increased by {difference}. "
+            f"Usage overage increased by {current_overage - previous_overage}."
+        )
 
     tool_calls.append("compare_charge_categories")
 
