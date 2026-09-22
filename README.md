@@ -176,13 +176,13 @@ Example response:
     "Previous usage overage total: 0"
   ],
   "tool_calls": [
-  "fetch_current_invoice",
-  "fetch_previous_invoice",
-  "compare_invoice_totals",
-  "fetch_current_invoice_items",
-  "fetch_previous_invoice_items",
-  "compare_charge_categories"
-]
+    "fetch_current_invoice",
+    "fetch_previous_invoice",
+    "compare_invoice_totals",
+    "fetch_current_invoice_items",
+    "fetch_previous_invoice_items",
+    "compare_charge_categories"
+  ]
 }
 ```
 
@@ -191,6 +191,18 @@ Currently supported explanations:
 - subscription base charges increased
 - invoice total did not increase
 - missing invoice and wrong-customer validation errors
+
+### Evaluation cases
+
+The investigation endpoint is tested against these expected behaviors:
+
+| Case | Expected explanation |
+| --- | --- |
+| Usage overage increased | Explains the invoice increase using the difference between current and previous usage overage totals. |
+| Subscription base charges increased | Explains the invoice increase using the difference between current and previous subscription base totals. |
+| No invoice increase | Reports that the invoice total did not increase. |
+| Missing invoice | Returns a `404` error with `One or both invoices not found`. |
+| Invoices from different customers | Returns a `400` error with `Invoices must belong to the requested customer`. |
 
 ### Override values
 
