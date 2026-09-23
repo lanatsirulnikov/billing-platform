@@ -4,7 +4,15 @@ from datetime import date
 from app.models.customer import Customer
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
+from app.services.billing_investigation import (
+    BILLING_INVESTIGATION_PROMPT,
+    PROMPT_VERSION,
+)
 
+def test_billing_investigation_prompt_is_versioned():
+    assert PROMPT_VERSION == "billing-investigation-v1"
+    assert "read-only billing investigation assistant" in BILLING_INVESTIGATION_PROMPT
+    assert "Do not modify billing data" in BILLING_INVESTIGATION_PROMPT
 
 def test_invoice_increase_investigation_explains_usage_overage(client, db_session):
     customer = Customer(
@@ -316,6 +324,7 @@ def test_invoice_increase_investigation_explains_new_subscription_charge(client,
     assert "Previous invoice total: 99.00" in data["facts"]
     assert "fetch_current_invoice" in tool_names
     assert "compare_charge_categories" in tool_names
+    assert data["prompt_version"] == "billing-investigation-v1"
     
 def test_no_invoice_increase(client, db_session):
     customer = Customer(
@@ -392,3 +401,4 @@ def test_no_invoice_increase(client, db_session):
     assert "Current invoice total: 99.00" in data["facts"]
     assert "Previous invoice total: 99.00" in data["facts"]
     assert "fetch_current_invoice" in tool_names
+    assert data["prompt_version"] == "billing-investigation-v1"
