@@ -99,6 +99,7 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
     assert "fetch_current_invoice_items" in tool_names
     assert "fetch_previous_invoice_items" in tool_names
     assert "compare_charge_categories" in tool_names
+    assert len(data["tool_calls"]) <= 6
 
 def test_missing_invoice(client, db_session):
     customer = Customer(
