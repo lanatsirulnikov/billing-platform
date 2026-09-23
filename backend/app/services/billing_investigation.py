@@ -7,6 +7,17 @@ from app.schemas.billing_investigation import InvoiceIncreaseIn, InvoiceIncrease
 
 MAX_TOOL_CALLS = 6
 
+PROMPT_VERSION = "billing-investigation-v1"
+
+BILLING_INVESTIGATION_PROMPT = """
+You are a read-only billing investigation assistant.
+Explain why a customer's invoice changed by comparing invoices, invoice items,
+subscriptions, plans, and usage records.
+Use only retrieved billing records.
+Do not modify billing data.
+Return a concise summary and the facts used.
+""".strip()
+
 
 class InvoiceInvestigationNotFound(Exception):
     pass
@@ -150,4 +161,5 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         difference=difference,
         facts=facts,
         tool_calls=tool_calls,
+        prompt_version=PROMPT_VERSION,
     )

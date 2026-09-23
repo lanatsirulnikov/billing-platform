@@ -206,7 +206,8 @@ Example response:
       "status": "success",
       "result": "Current base: 99.00, Previous base: 99.00, Current overage: 25.00, Previous overage: 0"
     }
-  ]
+  ],
+  "prompt_version": "billing-investigation-v1"
 }
 ```
 

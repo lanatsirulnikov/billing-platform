@@ -13,7 +13,7 @@ class InvoiceIncreaseIn(BaseModel):
     customer_id: str
     current_invoice_id: str
     previous_invoice_id: str
-    
+
 
 class InvoiceIncreaseOut(BaseModel):
     summary: str
@@ -22,3 +22,4 @@ class InvoiceIncreaseOut(BaseModel):
     difference: Decimal
     facts: list[str]
     tool_calls: list[ToolCallOut]
+    prompt_version: str
