@@ -176,12 +176,36 @@ Example response:
     "Previous usage overage total: 0"
   ],
   "tool_calls": [
-    "fetch_current_invoice",
-    "fetch_previous_invoice",
-    "compare_invoice_totals",
-    "fetch_current_invoice_items",
-    "fetch_previous_invoice_items",
-    "compare_charge_categories"
+    {
+      "name": "fetch_current_invoice",
+      "status": "success",
+      "result": "Found invoice INV-202606-001"
+    },
+    {
+      "name": "fetch_previous_invoice",
+      "status": "success",
+      "result": "Found invoice INV-202605-001"
+    },
+    {
+      "name": "compare_invoice_totals",
+      "status": "success",
+      "result": "Current total: 124.00, Previous total: 99.00, Difference: 25.00"
+    },
+    {
+      "name": "fetch_current_invoice_items",
+      "status": "success",
+      "result": "Found 2 invoice items"
+    },
+    {
+      "name": "fetch_previous_invoice_items",
+      "status": "success",
+      "result": "Found 1 invoice items"
+    },
+    {
+      "name": "compare_charge_categories",
+      "status": "success",
+      "result": "Current base: 99.00, Previous base: 99.00, Current overage: 25.00, Previous overage: 0"
+    }
   ]
 }
 ```

@@ -64,13 +64,14 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         "result": f"Current total: {current_total}, Previous total: {previous_total}, Difference: {difference}",
     })
 
+    # TODO: Pluralize "invoice item" when count is 1 for cleaner tool-call output.
     current_items = db.scalars(
         select(InvoiceItem).where(InvoiceItem.invoice_id == current_invoice.id)
     ).all()
     tool_calls.append({
         "name": "fetch_current_invoice_items",
         "status": "success",
-        "result": f"Found {len(current_items)} invoice items",
+        "result": f"Found {len(current_items)} invoice item{'s' if len(current_items) != 1 else ''}",
     })
     
     previous_items = db.scalars(
@@ -79,7 +80,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     tool_calls.append({
         "name": "fetch_previous_invoice_items",
         "status": "success",
-        "result": f"Found {len(previous_items)} invoice items",
+        "result": f"Found {len(previous_items)} invoice item{'s' if len(previous_items) != 1 else ''}",
     })
 
     current_overage = sum(item.amount for item in current_items if item.item_type == "usage_overage")
