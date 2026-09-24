@@ -164,7 +164,7 @@ def fetch_invoice_items(
     record_tool_call(
         tool_calls,
         name=tool_name,
-        status="success" if items else "failed",
+        status="success",
         result=f"Found {len(items)} invoice item{'s' if len(items) != 1 else ''}"
     )
     return items
@@ -205,27 +205,26 @@ def compare_charge_categories(
     ]:
         facts.append(fact)
 
-
-    # TODO: Support multi-factor explanations when several charge categories increase in the same invoice.
-    # For now, the summary reports the strongest single reason handled by this service.
-    if difference == 0:
-        summary = "Invoice total did not increase."
-    elif difference < 0:
-        summary = f"Invoice total decreased by {abs(difference)}."
-    else:
-        summary = f"Invoice total changed by {difference}."
+    reasons = []
 
     if current_base > previous_base:
-        summary = (
-            f"Invoice increased by {difference}. "
+        reasons.append(
             f"Subscription base charges increased by {current_base - previous_base}."
         )
 
     if current_overage > previous_overage:
-        summary = (
-            f"Invoice increased by {difference}. "
+        reasons.append(
             f"Usage overage increased by {current_overage - previous_overage}."
         )
+
+    if difference == 0:
+        summary = "Invoice total did not increase."
+    elif difference < 0:
+        summary = f"Invoice total decreased by {abs(difference)}."
+    elif reasons:
+        summary = f"Invoice increased by {difference}. " + " ".join(reasons)
+    else:
+        summary = f"Invoice total changed by {difference}."
 
     record_tool_call(
         tool_calls,
