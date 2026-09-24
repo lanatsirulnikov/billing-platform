@@ -137,6 +137,8 @@ paused means:
 
 ## Billing Investigation Assistant
 
+The investigation service is organized as a small read-only tool workflow: it fetches invoices, fetches invoice items, compares invoice totals, compares charge categories, and returns structured tool-call logs. The workflow is guarded by a maximum tool-call limit and includes a versioned prompt identifier.
+
 The backend includes a read-only billing investigation endpoint for answering:
 
 > Why did this customer's invoice increase this month?
@@ -214,6 +216,7 @@ Example response:
 Currently supported explanations:
 - usage overage increased
 - subscription base charges increased
+- multiple charge categories increased in the same invoice
 - invoice total did not increase
 - missing invoice and wrong-customer validation errors
 
