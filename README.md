@@ -137,6 +137,8 @@ paused means:
 
 ## Billing Investigation Assistant
 
+The investigation service is organized as a small read-only tool workflow: it fetches invoices, fetches invoice items, compares invoice totals, compares charge categories, and returns structured tool-call logs. The workflow is guarded by a maximum tool-call limit and includes a versioned prompt identifier.
+
 The backend includes a read-only billing investigation endpoint for answering:
 
 > Why did this customer's invoice increase this month?
@@ -176,19 +178,45 @@ Example response:
     "Previous usage overage total: 0"
   ],
   "tool_calls": [
-    "fetch_current_invoice",
-    "fetch_previous_invoice",
-    "compare_invoice_totals",
-    "fetch_current_invoice_items",
-    "fetch_previous_invoice_items",
-    "compare_charge_categories"
-  ]
+    {
+      "name": "fetch_current_invoice",
+      "status": "success",
+      "result": "Found invoice INV-202606-001"
+    },
+    {
+      "name": "fetch_previous_invoice",
+      "status": "success",
+      "result": "Found invoice INV-202605-001"
+    },
+    {
+      "name": "compare_invoice_totals",
+      "status": "success",
+      "result": "Current total: 124.00, Previous total: 99.00, Difference: 25.00"
+    },
+    {
+      "name": "fetch_current_invoice_items",
+      "status": "success",
+      "result": "Found 2 invoice items"
+    },
+    {
+      "name": "fetch_previous_invoice_items",
+      "status": "success",
+      "result": "Found 1 invoice items"
+    },
+    {
+      "name": "compare_charge_categories",
+      "status": "success",
+      "result": "Current base: 99.00, Previous base: 99.00, Current overage: 25.00, Previous overage: 0"
+    }
+  ],
+  "prompt_version": "billing-investigation-v1"
 }
 ```
 
 Currently supported explanations:
 - usage overage increased
 - subscription base charges increased
+- multiple charge categories increased in the same invoice
 - invoice total did not increase
 - missing invoice and wrong-customer validation errors
 
