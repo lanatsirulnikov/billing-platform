@@ -36,6 +36,49 @@ jobs:
         working-directory: backend
         run: python -m pytest -q
 
+  database-migrations:
+    name: Database migrations
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: billing_platform
+          POSTGRES_USER: billing_user
+          POSTGRES_PASSWORD: billing_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U billing_user -d billing_platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://billing_user:billing_password@localhost:5432/billing_platform
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run database migrations
+        working-directory: backend
+        run: alembic upgrade head
+
   frontend-build:
     name: Frontend build
     runs-on: ubuntu-latest
