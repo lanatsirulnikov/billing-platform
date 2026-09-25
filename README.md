@@ -201,7 +201,7 @@ Example response:
     {
       "name": "fetch_previous_invoice_items",
       "status": "success",
-      "result": "Found 1 invoice items"
+      "result": "Found 1 invoice item"
     },
     {
       "name": "compare_charge_categories",
@@ -219,6 +219,49 @@ Currently supported explanations:
 - multiple charge categories increased in the same invoice
 - invoice total did not increase
 - missing invoice and wrong-customer validation errors
+
+### Demo data
+
+Create reproducible demo invoices for the billing investigation assistant.
+
+For Docker:
+
+```bash
+docker compose exec backend sh -c 'PYTHONPATH=/app python scripts/seed_billing_investigation_demo.py'
+```
+
+For local backend:
+
+```bash
+cd backend
+PYTHONPATH=. python scripts/seed_billing_investigation_demo.py
+```
+
+The script prints:
+
+```
+customer_id=...
+previous_invoice_id=...
+current_invoice_id=...
+```
+
+Use those values in the investigation request:
+
+```bash
+curl -X POST http://localhost:8000/billing-investigations/invoice-increase \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": "PASTE_CUSTOMER_ID",
+    "previous_invoice_id": "PASTE_PREVIOUS_INVOICE_ID",
+    "current_invoice_id": "PASTE_CURRENT_INVOICE_ID"
+  }'
+```
+
+Expected summary:
+
+```
+Invoice increased by 25.00. Usage overage increased by 25.00.
+```
 
 ### Evaluation cases
 
