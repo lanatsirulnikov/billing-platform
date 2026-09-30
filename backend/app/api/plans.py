@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
 from app.models.plan import Plan
 from app.schemas.plan import PlanCreate, PlanOut

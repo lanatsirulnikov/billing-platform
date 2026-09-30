@@ -1,11 +1,12 @@
-from decimal import Decimal
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric, Integer, Boolean
+
+from app.db.session import Base
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column
-from app.db.session import Base
 
 
 class Subscription(Base):

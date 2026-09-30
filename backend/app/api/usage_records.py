@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
+from app.models.subscription import Subscription
 from app.models.usage_record import UsageRecord
 from app.schemas.usage_record import UsageRecordCreate, UsageRecordOut
-from app.models.subscription import Subscription
 
 router = APIRouter(prefix="/usage-records", tags=["usage-records"])
 

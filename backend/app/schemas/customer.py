@@ -1,6 +1,8 @@
 # app/schemas/customer.py
 from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
+
 
 class CustomerCreate(BaseModel):
     name: str

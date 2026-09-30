@@ -1,11 +1,12 @@
+import uuid
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
-import uuid
-from datetime import datetime, date
-from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric, Integer, UniqueConstraint
+
+from app.db.session import Base
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.session import Base
 
 
 class InvoiceItem(Base):

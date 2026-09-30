@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+
 from app.db.session import SessionLocal
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem

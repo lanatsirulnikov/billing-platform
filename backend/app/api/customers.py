@@ -1,7 +1,8 @@
 # app/api/customers.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
 from app.models.customer import Customer
 from app.schemas.customer import CustomerCreate, CustomerOut

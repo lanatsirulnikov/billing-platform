@@ -1,5 +1,5 @@
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
 from app.models.customer import Customer
 from app.models.invoice import Invoice
@@ -11,8 +11,8 @@ from app.services.billing_investigation import (
     compare_invoice_totals,
     fetch_invoice,
     fetch_invoice_items,
-    fetch_invoice_items,
 )
+
 
 def test_billing_investigation_prompt_is_versioned():
     assert PROMPT_VERSION == "billing-investigation-v1"
@@ -552,7 +552,7 @@ def test_compare_invoice_totals(db_session):
         {
             "name": "compare_invoice_totals",
             "status": "success",
-            "result": f"Current total: 109.00, Previous total: 99.00, Difference: 10.00",
+            "result": "Current total: 109.00, Previous total: 99.00, Difference: 10.00",
         }
     ]
 

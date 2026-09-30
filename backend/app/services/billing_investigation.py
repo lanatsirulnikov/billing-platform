@@ -1,10 +1,10 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import select
 from decimal import Decimal
 
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.schemas.billing_investigation import InvoiceIncreaseIn, InvoiceIncreaseOut
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 MAX_TOOL_CALLS = 6
 

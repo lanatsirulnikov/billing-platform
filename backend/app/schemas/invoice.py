@@ -1,8 +1,10 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, Literal
+from typing import Literal, Optional
+
+from app.schemas.invoice_item import InvoiceItemDetailOut
 from pydantic import BaseModel
-from app.schemas.invoice_item import InvoiceItemOut, InvoiceItemDetailOut
+
 
 class InvoiceCreate(BaseModel):
     invoice_number: str

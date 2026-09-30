@@ -1,16 +1,16 @@
+from datetime import date, datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select
-from datetime import datetime, timezone
+from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
+from app.models.customer import Customer
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
-from app.models.customer import Customer
 from app.models.subscription import Subscription
-from app.schemas.invoice import InvoiceCreate, InvoiceOut, InvoiceDetailOut
+from app.schemas.invoice import InvoiceCreate, InvoiceDetailOut, InvoiceOut, InvoiceStatusUpdate
 from app.schemas.invoice_item import InvoiceItemOut
-from app.schemas.invoice import InvoiceStatusUpdate
-from datetime import date
 from app.services.invoicing import autogenerate_invoices
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])

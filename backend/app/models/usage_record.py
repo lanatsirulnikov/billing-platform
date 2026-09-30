@@ -1,9 +1,10 @@
 import uuid
-from datetime import datetime, date
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, UniqueConstraint, CheckConstraint
+from datetime import date, datetime
+
+from app.db.session import Base
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column
-from app.db.session import Base
 
 
 class UsageRecord(Base):

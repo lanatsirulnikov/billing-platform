@@ -1,13 +1,11 @@
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
-from app.db.session import SessionLocal
 import app.models.init  # noqa: F401
-
+from app.db.session import SessionLocal
 from app.models.customer import Customer
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
-
 
 DEMO_CUSTOMER_EMAIL = "billing-investigation-demo@example.com"
 

@@ -1,11 +1,13 @@
 # app/api/customers.py
 from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.db.session import SessionLocal
 from app.models.customer import Customer
 from app.models.plan import Plan
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from app.db.session import SessionLocal
 from app.models.subscription import Subscription
 from app.schemas.subscription import SubscriptionCreate, SubscriptionOut, SubscriptionStatusUpdate
 

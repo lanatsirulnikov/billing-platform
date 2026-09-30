@@ -1,15 +1,17 @@
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from dateutil.relativedelta import relativedelta
-from app.models.subscription import Subscription
+
 from app.models.invoice import Invoice
+from app.models.invoice_counter import InvoiceCounter
 from app.models.invoice_item import InvoiceItem
 from app.models.plan import Plan
-from app.models.invoice_counter import InvoiceCounter
+from app.models.subscription import Subscription
 from app.models.usage_record import UsageRecord
+from dateutil.relativedelta import relativedelta
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
-from collections import defaultdict
+
 
 def group_due_subscriptions_by_customer(db: Session, run_date: date):
     grouped = defaultdict(list)

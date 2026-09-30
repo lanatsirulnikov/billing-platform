@@ -1,16 +1,10 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
-from app.db.session import Base
-from app.models.customer import Customer
-from app.models.plan import Plan
-from app.models.subscription import Subscription
-from app.models.invoice import Invoice
-from app.models.invoice_item import InvoiceItem
-from app.models.invoice_counter import InvoiceCounter
-from app.models.usage_record import UsageRecord
 from app.core.settings import get_settings
+from app.db.session import Base
+from sqlalchemy import engine_from_config, pool
+
 # TODO: Future migrations should prefer database-neutral SQLAlchemy types
 # such as sa.String(36) instead of dialect-specific types like mysql.CHAR(36).
 

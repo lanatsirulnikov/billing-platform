@@ -1,8 +1,9 @@
 from fastapi import FastAPI
+
 from app.api.billing_investigations import router as billing_investigations_router
 from app.api.customers import router as customers_router
-from app.api.invoices import router as invoices_router
 from app.api.invoice_items import router as invoice_items_router
+from app.api.invoices import router as invoices_router
 from app.api.plans import router as plans_router
 from app.api.subscriptions import router as subscriptions_router
 from app.api.usage_records import router as usage_records_router

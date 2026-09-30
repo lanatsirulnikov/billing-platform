@@ -1,17 +1,16 @@
-import pytest
-
 from datetime import date
 from decimal import Decimal
 
+import pytest
 from app.models.customer import Customer
-from app.models.plan import Plan
-from app.models.subscription import Subscription
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
+from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.models.usage_record import UsageRecord
-
 from app.services import invoicing
 from app.services.invoicing import autogenerate_invoices
+
 
 def test_active_subscription_creates_base_item_and_advances_next_billing_date(db_session):
     customer = Customer(
