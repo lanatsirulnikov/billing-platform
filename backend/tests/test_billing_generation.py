@@ -57,6 +57,7 @@ def test_active_subscription_creates_base_item_and_advances_next_billing_date(db
     assert subscription.next_billing_date == date(2026, 7, 1)
     assert subscription.is_billable is True
 
+
 def test_duplicate_protection_on_subscription_base(db_session):
     customer = Customer(
         name="Test Customer",
@@ -108,6 +109,7 @@ def test_duplicate_protection_on_subscription_base(db_session):
     assert invoice.total_amount == Decimal("89.00")
     assert subscription.is_billable is True
 
+
 def test_subscription_with_missing_plan_is_marked_unbillable(db_session):
     customer = Customer(
         name="Test Customer",
@@ -137,6 +139,7 @@ def test_subscription_with_missing_plan_is_marked_unbillable(db_session):
     invoice = db_session.query(Invoice).filter_by(customer_id=customer.id).first()
     assert invoice is None
     assert subscription.is_billable is False
+
 
 def test_paused_subscription_creates_final_base_item_and_stops_billing(db_session):
     customer = Customer(
@@ -188,6 +191,7 @@ def test_paused_subscription_creates_final_base_item_and_stops_billing(db_sessio
     assert subscription.next_billing_date == date(2026, 6, 1)
     assert subscription.is_billable is False
 
+
 def test_usage_overage_creates_overage_item_with_correct_amount(db_session):
     customer = Customer(
         name="Test Customer",
@@ -221,23 +225,25 @@ def test_usage_overage_creates_overage_item_with_correct_amount(db_session):
     db_session.add(subscription)
     db_session.flush()
 
-    db_session.add_all([
-        UsageRecord(
-            subscription_id=subscription.id,
-            recorded_on=date(2026, 5, 10),
-            active_user_count=12,
-        ),
-        UsageRecord(
-            subscription_id=subscription.id,
-            recorded_on=date(2026, 5, 20),
-            active_user_count=15,
-        ),
-        UsageRecord(
-            subscription_id=subscription.id,
-            recorded_on=date(2026, 6, 1),
-            active_user_count=99,
-        ),
-    ])
+    db_session.add_all(
+        [
+            UsageRecord(
+                subscription_id=subscription.id,
+                recorded_on=date(2026, 5, 10),
+                active_user_count=12,
+            ),
+            UsageRecord(
+                subscription_id=subscription.id,
+                recorded_on=date(2026, 5, 20),
+                active_user_count=15,
+            ),
+            UsageRecord(
+                subscription_id=subscription.id,
+                recorded_on=date(2026, 6, 1),
+                active_user_count=99,
+            ),
+        ]
+    )
     db_session.commit()
 
     autogenerate_invoices(db_session, date(2026, 6, 1))
@@ -257,6 +263,7 @@ def test_usage_overage_creates_overage_item_with_correct_amount(db_session):
     assert overage_item.amount == Decimal("25.00")
     assert invoice.subtotal == Decimal("125.00")
     assert invoice.total_amount == Decimal("125.00")
+
 
 def test_month_end_subscription_advances_from_february_to_march(db_session):
     customer = Customer(
@@ -301,6 +308,7 @@ def test_month_end_subscription_advances_from_february_to_march(db_session):
     assert item.period_end == date(2026, 2, 28)
     assert item.amount == Decimal("75.00")
     assert subscription.next_billing_date == date(2026, 3, 28)
+
 
 def test_multiple_subscriptions_for_one_customer_create_one_invoice_with_multiple_items(db_session):
     customer = Customer(
@@ -375,6 +383,7 @@ def test_multiple_subscriptions_for_one_customer_create_one_invoice_with_multipl
     assert basic_subscription.next_billing_date == date(2026, 7, 1)
     assert pro_subscription.next_billing_date == date(2026, 7, 1)
 
+
 def test_invoice_generation_rolls_back_when_item_processing_fails(db_session, monkeypatch):
     customer = Customer(
         name="Test Customer",
@@ -429,6 +438,7 @@ def test_invoice_generation_rolls_back_when_item_processing_fails(db_session, mo
     assert subscription_after_failure.next_billing_date == date(2026, 6, 1)
     assert subscription_after_failure.is_billable is True
 
+
 def test_cancelled_subscription_creates_final_base_item_and_stops_billing(db_session):
     customer = Customer(
         name="Test Customer",
@@ -479,6 +489,7 @@ def test_cancelled_subscription_creates_final_base_item_and_stops_billing(db_ses
     assert subscription.next_billing_date == date(2026, 6, 1)
     assert subscription.is_billable is False
 
+
 def test_zero_overrides_inherit_plan_values(db_session):
     customer = Customer(
         name="Test Customer",
@@ -511,13 +522,15 @@ def test_zero_overrides_inherit_plan_values(db_session):
     db_session.add(subscription)
     db_session.commit()
 
-    db_session.add_all([
-        UsageRecord(
-            subscription_id=subscription.id,
-            recorded_on=date(2026, 5, 20),
-            active_user_count=10,
-        )
-    ])
+    db_session.add_all(
+        [
+            UsageRecord(
+                subscription_id=subscription.id,
+                recorded_on=date(2026, 5, 20),
+                active_user_count=10,
+            )
+        ]
+    )
     db_session.commit()
 
     autogenerate_invoices(db_session, date(2026, 6, 1))
@@ -540,6 +553,7 @@ def test_zero_overrides_inherit_plan_values(db_session):
     assert invoice.total_amount == Decimal("105.00")
     assert subscription.next_billing_date == date(2026, 7, 1)
     assert subscription.is_billable is True
+
 
 def test_overdue_subscription_advances_one_interval_per_generation_run(db_session):
     customer = Customer(

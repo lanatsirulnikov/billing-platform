@@ -32,9 +32,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     tool_calls = []
 
     invoices = db.scalars(
-        select(Invoice).where(
-            Invoice.id.in_([input.current_invoice_id, input.previous_invoice_id])
-        )
+        select(Invoice).where(Invoice.id.in_([input.current_invoice_id, input.previous_invoice_id]))
     ).all()
 
     current_invoice = fetch_invoice(
@@ -56,12 +54,11 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
     if not current_invoice or not previous_invoice:
         raise InvoiceInvestigationNotFound("One or both invoices not found")
 
-    if (current_invoice.customer_id != input.customer_id
+    if (
+        current_invoice.customer_id != input.customer_id
         or previous_invoice.customer_id != input.customer_id
     ):
-        raise InvoiceInvestigationInvalidInput(
-            "Invoices must belong to the requested customer"
-        )
+        raise InvoiceInvestigationInvalidInput("Invoices must belong to the requested customer")
 
     current_total = current_invoice.total_amount
     previous_total = previous_invoice.total_amount
@@ -79,7 +76,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         tool_name="fetch_current_invoice_items",
         missing_result="Current invoice items not found",
     )
-    
+
     previous_items = fetch_invoice_items(
         db,
         previous_invoice.id,
@@ -88,10 +85,18 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         missing_result="Previous invoice items not found",
     )
 
-    current_overage = sum(item.amount for item in current_items if item.item_type == "usage_overage")
-    previous_overage = sum(item.amount for item in previous_items if item.item_type == "usage_overage")
-    current_base = sum(item.amount for item in current_items if item.item_type == "subscription_base")
-    previous_base = sum(item.amount for item in previous_items if item.item_type == "subscription_base")
+    current_overage = sum(
+        item.amount for item in current_items if item.item_type == "usage_overage"
+    )
+    previous_overage = sum(
+        item.amount for item in previous_items if item.item_type == "usage_overage"
+    )
+    current_base = sum(
+        item.amount for item in current_items if item.item_type == "subscription_base"
+    )
+    previous_base = sum(
+        item.amount for item in previous_items if item.item_type == "subscription_base"
+    )
 
     facts = [
         f"Current invoice total: {current_total}",
@@ -119,17 +124,21 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         prompt_version=PROMPT_VERSION,
     )
 
+
 def record_tool_call(tool_calls: list[dict], name: str, status: str, result: str) -> None:
     if len(tool_calls) >= MAX_TOOL_CALLS:
         raise InvoiceInvestigationInvalidInput("Maximum tool calls exceeded")
 
-    tool_calls.append({
-        "name": name,
-        "status": status,
-        "result": result,
-    })
+    tool_calls.append(
+        {
+            "name": name,
+            "status": status,
+            "result": result,
+        }
+    )
 
-def fetch_invoice(   
+
+def fetch_invoice(
     invoices: list[Invoice],
     invoice_id: str,
     tool_calls: list[dict],
@@ -142,13 +151,10 @@ def fetch_invoice(
         tool_calls,
         name=tool_name,
         status="success" if invoice else "failed",
-        result=(
-            f"Found invoice {invoice.invoice_number}"
-            if invoice
-            else missing_result
-        )
+        result=(f"Found invoice {invoice.invoice_number}" if invoice else missing_result),
     )
     return invoice
+
 
 def fetch_invoice_items(
     db: Session,
@@ -157,17 +163,16 @@ def fetch_invoice_items(
     tool_name: str,
     missing_result: str,
 ) -> list[InvoiceItem]:
-    items = db.scalars(
-        select(InvoiceItem).where(InvoiceItem.invoice_id == invoice_id)
-    ).all()
+    items = db.scalars(select(InvoiceItem).where(InvoiceItem.invoice_id == invoice_id)).all()
 
     record_tool_call(
         tool_calls,
         name=tool_name,
         status="success",
-        result=f"Found {len(items)} invoice item{'s' if len(items) != 1 else ''}"
+        result=f"Found {len(items)} invoice item{'s' if len(items) != 1 else ''}",
     )
     return items
+
 
 def compare_invoice_totals(
     current_total: Decimal,
@@ -181,10 +186,11 @@ def compare_invoice_totals(
         tool_calls,
         name=tool_name,
         status="success",
-        result=f"Current total: {current_total}, Previous total: {previous_total}, Difference: {difference}"
+        result=f"Current total: {current_total}, Previous total: {previous_total}, Difference: {difference}",
     )
 
     return difference
+
 
 def compare_charge_categories(
     current_base: Decimal,
@@ -208,14 +214,10 @@ def compare_charge_categories(
     reasons = []
 
     if current_base > previous_base:
-        reasons.append(
-            f"Subscription base charges increased by {current_base - previous_base}."
-        )
+        reasons.append(f"Subscription base charges increased by {current_base - previous_base}.")
 
     if current_overage > previous_overage:
-        reasons.append(
-            f"Usage overage increased by {current_overage - previous_overage}."
-        )
+        reasons.append(f"Usage overage increased by {current_overage - previous_overage}.")
 
     if difference == 0:
         summary = "Invoice total did not increase."
@@ -230,6 +232,6 @@ def compare_charge_categories(
         tool_calls,
         name=tool_name,
         status="success",
-        result=f"Current base: {current_base}, Previous base: {previous_base}, Current overage: {current_overage}, Previous overage: {previous_overage}"
+        result=f"Current base: {current_base}, Previous base: {previous_base}, Current overage: {current_overage}, Previous overage: {previous_overage}",
     )
     return summary

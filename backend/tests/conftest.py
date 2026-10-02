@@ -39,11 +39,13 @@ def testing_session_factory(test_engine):
         bind=test_engine,
     )
 
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database(test_engine):
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
+
 
 @pytest.fixture
 def db_session(test_engine, testing_session_factory):
@@ -58,6 +60,7 @@ def db_session(test_engine, testing_session_factory):
         session.close()
         Base.metadata.drop_all(bind=test_engine)
         Base.metadata.create_all(bind=test_engine)
+
 
 @pytest.fixture
 def client(db_session):

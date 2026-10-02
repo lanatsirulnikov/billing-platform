@@ -28,7 +28,7 @@ def create_plan(input: PlanCreate, db: Session = Depends(get_db)):
         price=input.price,
         user_quota=input.user_quota,
         overage_user_price=input.overage_user_price,
-        interval=input.interval
+        interval=input.interval,
     )
     db.add(plan)
     db.commit()

@@ -11,6 +11,7 @@ from app.services.billing_investigation import (
 
 router = APIRouter(prefix="/billing-investigations", tags=["billing-investigations"])
 
+
 @router.post("/invoice-increase", response_model=InvoiceIncreaseOut)
 def invoice_increase(input: InvoiceIncreaseIn, db: Session = Depends(get_db)):
     try:

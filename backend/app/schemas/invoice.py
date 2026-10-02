@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Literal, Optional
 
 from app.schemas.invoice_item import InvoiceItemDetailOut
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class InvoiceCreate(BaseModel):
@@ -17,9 +17,10 @@ class InvoiceCreate(BaseModel):
     billing_period_start: Optional[date] = None
     billing_period_end: Optional[date] = None
     due_date: date
-    issued_at:Optional[datetime] = None
+    issued_at: Optional[datetime] = None
     paid_at: Optional[datetime] = None
     voided_at: Optional[datetime] = None
+
 
 class InvoiceOut(BaseModel):
     id: str
@@ -38,16 +39,15 @@ class InvoiceOut(BaseModel):
     voided_at: Optional[datetime]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class InvoiceCustomerOut(BaseModel):
     id: str
     name: str
     email: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InvoiceDetailOut(InvoiceOut):

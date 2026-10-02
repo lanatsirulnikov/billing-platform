@@ -15,12 +15,14 @@ from app.services.invoicing import autogenerate_invoices
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 def is_valid_invoice_status_transition(current_status: str, new_status: str) -> bool:
     allowed = {
@@ -31,17 +33,19 @@ def is_valid_invoice_status_transition(current_status: str, new_status: str) -> 
     }
     return new_status in allowed[current_status]
 
+
 @router.post("/generate-due")
 def generate_due_invoices(db: Session = Depends(get_db)):
     autogenerate_invoices(db, date.today())
     return {"ok": True}
+
 
 @router.post("", response_model=InvoiceOut)
 def create_invoice(input: InvoiceCreate, db: Session = Depends(get_db)):
     customer = db.get(Customer, input.customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="CUSTOMER_NOT_FOUND")
-    
+
     invoice = Invoice(
         invoice_number=input.invoice_number,
         customer_id=input.customer_id,
@@ -63,20 +67,22 @@ def create_invoice(input: InvoiceCreate, db: Session = Depends(get_db)):
     db.refresh(invoice)
     return invoice
 
+
 @router.get("", response_model=list[InvoiceOut])
 def list_invoices(db: Session = Depends(get_db)):
     return db.scalars(select(Invoice).order_by(Invoice.created_at.desc())).all()
+
 
 @router.get("/{invoice_id}", response_model=InvoiceDetailOut)
 def get_invoice(invoice_id: str, db: Session = Depends(get_db)):
     invoice = db.get(Invoice, invoice_id)
     if not invoice:
         raise HTTPException(status_code=404, detail="INVOICE_NOT_FOUND")
-    
+
     customer = db.get(Customer, invoice.customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="CUSTOMER_NOT_FOUND")
-    
+
     items = db.scalars(
         select(InvoiceItem)
         .where(InvoiceItem.invoice_id == invoice_id)
@@ -89,20 +95,22 @@ def get_invoice(invoice_id: str, db: Session = Depends(get_db)):
         if item.subscription_id:
             subscription = db.get(Subscription, item.subscription_id)
 
-        item_details.append({
-            "id": item.id,
-            "invoice_id": item.invoice_id,
-            "subscription_id": item.subscription_id,
-            "item_type": item.item_type,
-            "description": item.description,
-            "period_start": item.period_start,
-            "period_end": item.period_end,
-            "quantity": item.quantity,
-            "unit_price": item.unit_price,
-            "amount": item.amount,
-            "created_at": item.created_at,
-            "subscription": subscription,
-        })
+        item_details.append(
+            {
+                "id": item.id,
+                "invoice_id": item.invoice_id,
+                "subscription_id": item.subscription_id,
+                "item_type": item.item_type,
+                "description": item.description,
+                "period_start": item.period_start,
+                "period_end": item.period_end,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "amount": item.amount,
+                "created_at": item.created_at,
+                "subscription": subscription,
+            }
+        )
 
     return {
         "id": invoice.id,
@@ -124,6 +132,7 @@ def get_invoice(invoice_id: str, db: Session = Depends(get_db)):
         "items": item_details,
     }
 
+
 @router.get("/{invoice_id}/items", response_model=list[InvoiceItemOut])
 def list_invoice_items(invoice_id: str, db: Session = Depends(get_db)):
     invoice = db.get(Invoice, invoice_id)
@@ -135,6 +144,7 @@ def list_invoice_items(invoice_id: str, db: Session = Depends(get_db)):
         .where(InvoiceItem.invoice_id == invoice_id)
         .order_by(InvoiceItem.created_at.asc())
     ).all()
+
 
 @router.patch("/{invoice_id}/status", response_model=InvoiceOut)
 def update_invoice_status(
@@ -153,21 +163,19 @@ def update_invoice_status(
         customer = db.get(Customer, invoice.customer_id)
         if not customer:
             raise HTTPException(status_code=400, detail="INVOICE_CUSTOMER_NOT_FOUND")
-        
-        items = db.scalars(
-            select(InvoiceItem).where(InvoiceItem.invoice_id == invoice.id)
-        ).all()
+
+        items = db.scalars(select(InvoiceItem).where(InvoiceItem.invoice_id == invoice.id)).all()
 
         if not items:
             raise HTTPException(status_code=400, detail="INVOICE_HAS_NO_ITEMS")
-        
+
         items_total = sum(item.amount for item in items)
         if invoice.total_amount != items_total:
             raise HTTPException(status_code=400, detail="INVOICE_TOTAL_MISMATCH")
-        
+
         if invoice.subtotal + invoice.tax_amount != invoice.total_amount:
             raise HTTPException(status_code=400, detail="INVALID_INVOICE_TOTALS")
-    
+
     invoice.status = input.status
 
     if input.status == "open" and invoice.issued_at is None:

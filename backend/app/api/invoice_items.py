@@ -17,6 +17,7 @@ def get_db():
     finally:
         db.close()
 
+
 @router.post("", response_model=InvoiceItemOut)
 def create_invoice_item(input: InvoiceItemCreate, db: Session = Depends(get_db)):
     invoice = db.get(Invoice, input.invoice_id)
@@ -27,13 +28,13 @@ def create_invoice_item(input: InvoiceItemCreate, db: Session = Depends(get_db))
         subscription = db.get(Subscription, input.subscription_id)
         if not subscription:
             raise HTTPException(status_code=404, detail="SUBSCRIPTION_NOT_FOUND")
-        
+
     if input.quantity <= 0:
         raise HTTPException(status_code=400, detail="INVALID_QUANTITY")
-    
+
     if input.period_start and input.period_end and input.period_end < input.period_start:
         raise HTTPException(status_code=400, detail="INVALID_BILLING_PERIOD")
-    
+
     expected_amount = input.unit_price * input.quantity
     if input.amount != expected_amount:
         raise HTTPException(status_code=400, detail="INVALID_INVOICE_ITEM_AMOUNT")
@@ -54,6 +55,7 @@ def create_invoice_item(input: InvoiceItemCreate, db: Session = Depends(get_db))
     db.commit()
     db.refresh(item)
     return item
+
 
 @router.get("/{item_id}", response_model=InvoiceItemOut)
 def get_invoice_item(item_id: str, db: Session = Depends(get_db)):

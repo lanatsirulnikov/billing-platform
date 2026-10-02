@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SubscriptionCreate(BaseModel):
@@ -30,8 +30,8 @@ class SubscriptionOut(BaseModel):
     is_billable: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class SubscriptionStatusUpdate(BaseModel):
     status: Literal["active", "paused", "cancelled"]

@@ -19,6 +19,8 @@ app.include_router(invoice_items_router)
 app.include_router(plans_router)
 app.include_router(subscriptions_router)
 app.include_router(usage_records_router)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}

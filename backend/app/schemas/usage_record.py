@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UsageRecordCreate(BaseModel):
@@ -16,5 +16,4 @@ class UsageRecordOut(BaseModel):
     active_user_count: int = Field(..., ge=0)
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

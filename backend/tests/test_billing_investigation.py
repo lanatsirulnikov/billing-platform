@@ -19,6 +19,7 @@ def test_billing_investigation_prompt_is_versioned():
     assert "read-only billing investigation assistant" in BILLING_INVESTIGATION_PROMPT
     assert "Do not modify billing data" in BILLING_INVESTIGATION_PROMPT
 
+
 def test_invoice_increase_investigation_explains_usage_overage(client, db_session):
     customer = Customer(
         name="Investigation Customer",
@@ -50,41 +51,43 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
     db_session.add_all([previous_invoice, current_invoice])
     db_session.flush()
 
-    db_session.add_all([
-        InvoiceItem(
-            invoice_id=previous_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Previous base charge",
-            period_start=date(2026, 4, 1),
-            period_end=date(2026, 5, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-        InvoiceItem(
-            invoice_id=current_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Current base charge",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 6, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-        InvoiceItem(
-            invoice_id=current_invoice.id,
-            subscription_id=None,
-            item_type="usage_overage",
-            description="Current usage overage",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 6, 1),
-            quantity=5,
-            unit_price=Decimal("5.00"),
-            amount=Decimal("25.00"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            InvoiceItem(
+                invoice_id=previous_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Previous base charge",
+                period_start=date(2026, 4, 1),
+                period_end=date(2026, 5, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+            InvoiceItem(
+                invoice_id=current_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Current base charge",
+                period_start=date(2026, 5, 1),
+                period_end=date(2026, 6, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+            InvoiceItem(
+                invoice_id=current_invoice.id,
+                subscription_id=None,
+                item_type="usage_overage",
+                description="Current usage overage",
+                period_start=date(2026, 5, 1),
+                period_end=date(2026, 6, 1),
+                quantity=5,
+                unit_price=Decimal("5.00"),
+                amount=Decimal("25.00"),
+            ),
+        ]
+    )
     db_session.commit()
 
     response = client.post(
@@ -115,6 +118,7 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
     assert len(data["tool_calls"]) <= 6
     assert data["prompt_version"] == "billing-investigation-v1"
 
+
 def test_missing_invoice(client, db_session):
     customer = Customer(
         name="Investigation Customer",
@@ -137,7 +141,7 @@ def test_missing_invoice(client, db_session):
     db_session.flush()
 
     db_session.add(
-            InvoiceItem(
+        InvoiceItem(
             invoice_id=current_invoice.id,
             subscription_id=None,
             item_type="subscription_base",
@@ -147,7 +151,8 @@ def test_missing_invoice(client, db_session):
             quantity=1,
             unit_price=Decimal("99.00"),
             amount=Decimal("99.00"),
-        ))
+        )
+    )
     db_session.commit()
 
     response = client.post(
@@ -164,6 +169,7 @@ def test_missing_invoice(client, db_session):
 
     assert "One or both invoices not found" in data["detail"]
 
+
 def test_different_customer_invoices(client, db_session):
     customer1 = Customer(
         name="Investigation Customer 1",
@@ -173,9 +179,9 @@ def test_different_customer_invoices(client, db_session):
     db_session.flush()
 
     customer2 = Customer(
-            name="Investigation Customer 2",
-            email="investigation2@example.com",
-        )
+        name="Investigation Customer 2",
+        email="investigation2@example.com",
+    )
     db_session.add(customer2)
     db_session.flush()
 
@@ -202,30 +208,32 @@ def test_different_customer_invoices(client, db_session):
     db_session.add_all([previous_invoice, current_invoice])
     db_session.flush()
 
-    db_session.add_all([
-        InvoiceItem(
-            invoice_id=previous_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Previous base charge",
-            period_start=date(2026, 4, 1),
-            period_end=date(2026, 5, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-        InvoiceItem(
-            invoice_id=current_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Current base charge",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 6, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        )
-    ])
+    db_session.add_all(
+        [
+            InvoiceItem(
+                invoice_id=previous_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Previous base charge",
+                period_start=date(2026, 4, 1),
+                period_end=date(2026, 5, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+            InvoiceItem(
+                invoice_id=current_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Current base charge",
+                period_start=date(2026, 5, 1),
+                period_end=date(2026, 6, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+        ]
+    )
     db_session.commit()
 
     response = client.post(
@@ -241,6 +249,7 @@ def test_different_customer_invoices(client, db_session):
     data = response.json()
 
     assert "Invoices must belong to the requested customer" in data["detail"]
+
 
 def test_invoice_increase_investigation_explains_new_subscription_charge(client, db_session):
     customer = Customer(
@@ -273,41 +282,43 @@ def test_invoice_increase_investigation_explains_new_subscription_charge(client,
     db_session.add_all([previous_invoice, current_invoice])
     db_session.flush()
 
-    db_session.add_all([
-        InvoiceItem(
-            invoice_id=previous_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Main subscription",
-            period_start=date(2026, 4, 1),
-            period_end=date(2026, 5, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-        InvoiceItem(
-            invoice_id=current_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Main subscription",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 6, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-        InvoiceItem(
-            invoice_id=current_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Additional subscription",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 6, 1),
-            quantity=1,
-            unit_price=Decimal("50.00"),
-            amount=Decimal("50.00"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            InvoiceItem(
+                invoice_id=previous_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Main subscription",
+                period_start=date(2026, 4, 1),
+                period_end=date(2026, 5, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+            InvoiceItem(
+                invoice_id=current_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Main subscription",
+                period_start=date(2026, 5, 1),
+                period_end=date(2026, 6, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+            InvoiceItem(
+                invoice_id=current_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Additional subscription",
+                period_start=date(2026, 5, 1),
+                period_end=date(2026, 6, 1),
+                quantity=1,
+                unit_price=Decimal("50.00"),
+                amount=Decimal("50.00"),
+            ),
+        ]
+    )
     db_session.commit()
 
     response = client.post(
@@ -330,7 +341,8 @@ def test_invoice_increase_investigation_explains_new_subscription_charge(client,
     assert "fetch_current_invoice" in tool_names
     assert "compare_charge_categories" in tool_names
     assert data["prompt_version"] == "billing-investigation-v1"
-    
+
+
 def test_no_invoice_increase(client, db_session):
     customer = Customer(
         name="Investigation Customer",
@@ -362,30 +374,32 @@ def test_no_invoice_increase(client, db_session):
     db_session.add_all([previous_invoice, current_invoice])
     db_session.flush()
 
-    db_session.add_all([
-        InvoiceItem(
-            invoice_id=previous_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Main subscription",
-            period_start=date(2026, 4, 1),
-            period_end=date(2026, 5, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-        InvoiceItem(
-            invoice_id=current_invoice.id,
-            subscription_id=None,
-            item_type="subscription_base",
-            description="Main subscription",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 6, 1),
-            quantity=1,
-            unit_price=Decimal("99.00"),
-            amount=Decimal("99.00"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            InvoiceItem(
+                invoice_id=previous_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Main subscription",
+                period_start=date(2026, 4, 1),
+                period_end=date(2026, 5, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+            InvoiceItem(
+                invoice_id=current_invoice.id,
+                subscription_id=None,
+                item_type="subscription_base",
+                description="Main subscription",
+                period_start=date(2026, 5, 1),
+                period_end=date(2026, 6, 1),
+                quantity=1,
+                unit_price=Decimal("99.00"),
+                amount=Decimal("99.00"),
+            ),
+        ]
+    )
     db_session.commit()
 
     response = client.post(
@@ -408,6 +422,7 @@ def test_no_invoice_increase(client, db_session):
     assert "fetch_current_invoice" in tool_names
     assert data["prompt_version"] == "billing-investigation-v1"
 
+
 def test_fetch_invoice_records_success_when_invoice_exists(db_session):
     customer = Customer(
         name="Investigation Customer",
@@ -428,7 +443,7 @@ def test_fetch_invoice_records_success_when_invoice_exists(db_session):
     )
     db_session.add(invoice)
     db_session.flush()
-    
+
     tool_calls = []
 
     result = fetch_invoice(
@@ -447,6 +462,7 @@ def test_fetch_invoice_records_success_when_invoice_exists(db_session):
             "result": "Found invoice INV-202606-NEW-002",
         }
     ]
+
 
 def test_fetch_invoice_records_failure_when_invoice_is_missing():
     tool_calls = []
@@ -467,6 +483,7 @@ def test_fetch_invoice_records_failure_when_invoice_is_missing():
             "result": "Previous invoice not found",
         }
     ]
+
 
 def test_fetch_invoice_items_succeed_with_zero_items(db_session):
     customer = Customer(
@@ -506,6 +523,7 @@ def test_fetch_invoice_items_succeed_with_zero_items(db_session):
             "result": "Found 0 invoice items",
         }
     ]
+
 
 def test_compare_invoice_totals(db_session):
     customer = Customer(
@@ -556,6 +574,7 @@ def test_compare_invoice_totals(db_session):
         }
     ]
 
+
 def test_compare_charge_categories_explains_subscription_base_increase():
     tool_calls = []
 
@@ -570,17 +589,15 @@ def test_compare_charge_categories_explains_subscription_base_increase():
         facts=[],
     )
 
-    assert summary == (
-        "Invoice increased by 10.00. "
-        "Subscription base charges increased by 10.00."
-    )
+    assert summary == ("Invoice increased by 10.00. Subscription base charges increased by 10.00.")
     assert tool_calls == [
         {
             "name": "compare_charge_categories",
             "status": "success",
-            "result": "Current base: 50.00, Previous base: 40.00, Current overage: 10.00, Previous overage: 10.00"
+            "result": "Current base: 50.00, Previous base: 40.00, Current overage: 10.00, Previous overage: 10.00",
         }
     ]
+
 
 def test_compare_charge_categories_explains_usage_overage():
     tool_calls = []
@@ -597,10 +614,7 @@ def test_compare_charge_categories_explains_usage_overage():
         facts=facts,
     )
 
-    assert summary == (
-        "Invoice increased by 10.00. "
-        "Usage overage increased by 10.00."
-    )
+    assert summary == ("Invoice increased by 10.00. Usage overage increased by 10.00.")
     assert facts == [
         "Difference: 10.00",
         "Current subscription base total: 40.00",

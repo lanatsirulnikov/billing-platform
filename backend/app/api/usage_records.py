@@ -9,12 +9,14 @@ from app.schemas.usage_record import UsageRecordCreate, UsageRecordOut
 
 router = APIRouter(prefix="/usage-records", tags=["usage-records"])
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 @router.post("", response_model=UsageRecordOut)
 def create_usage_record(input: UsageRecordCreate, db: Session = Depends(get_db)):
@@ -24,7 +26,7 @@ def create_usage_record(input: UsageRecordCreate, db: Session = Depends(get_db))
 
     if subscription.status == "cancelled" and input.recorded_on >= subscription.next_billing_date:
         raise HTTPException(status_code=400, detail="SUBSCRIPTION_CANCELLED")
-    
+
     existing = db.scalar(
         select(UsageRecord).where(
             UsageRecord.subscription_id == input.subscription_id,
@@ -42,6 +44,7 @@ def create_usage_record(input: UsageRecordCreate, db: Session = Depends(get_db))
     db.commit()
     db.refresh(usage_record)
     return usage_record
+
 
 @router.get("", response_model=list[UsageRecordOut])
 def list_usage_records(db: Session = Depends(get_db)):
