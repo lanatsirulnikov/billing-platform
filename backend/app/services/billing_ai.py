@@ -1,4 +1,5 @@
 from app.core.settings import get_settings
+from openai import OpenAI
 
 
 class BillingAIUnavailable(Exception):
@@ -16,17 +17,8 @@ def ensure_billing_ai_enabled() -> None:
 
 def explain_invoice_increase_with_ai(facts: list[str], tool_calls: list[dict]) -> str:
     ensure_billing_ai_enabled()
-
-    # TODO: Replace this deterministic placeholder with an OpenAI Responses API call.
-    facts_text = " ".join(facts)
-
-    if "Usage overage" in facts_text or "usage overage" in facts_text:
-        return "AI explanation: invoice increased because usage overage increased."
-
-    if "subscription base" in facts_text:
-        return "AI explanation: invoice increased because subscription base charges increased."
-
-    return "AI explanation: invoice changed based on the retrieved billing records."
+    prompt = build_billing_ai_prompt(facts=facts, tool_calls=tool_calls)
+    return call_openai_for_invoice_explanation(prompt)
 
 def build_billing_ai_prompt(facts: list[str], tool_calls: list[dict]) -> str:
     facts_text = "\n".join(f"- {fact}" for fact in facts)
@@ -45,3 +37,14 @@ Tool calls:
 
 Return one concise customer-facing explanation.
 """.strip()
+
+def call_openai_for_invoice_explanation(prompt: str) -> str:
+    settings = get_settings()
+
+    client = OpenAI(api_key=settings.openai_api_key)
+    response = client.responses.create(
+        model=settings.billing_ai_model,
+        input=prompt,
+    )
+
+    return response.output_text

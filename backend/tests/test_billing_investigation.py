@@ -634,6 +634,10 @@ def test_compare_charge_categories_explains_usage_overage():
 
 def test_invoice_increase_uses_ai_summary_when_enabled(client, db_session, monkeypatch):
     settings = get_settings()
+    monkeypatch.setattr(
+        "app.services.billing_investigation.explain_invoice_increase_with_ai",
+        lambda facts, tool_calls: "AI explanation from mocked OpenAI.",
+    )
     monkeypatch.setattr(settings, "billing_ai_enabled", True)
     monkeypatch.setattr(settings, "openai_api_key", "test-key")
 
@@ -716,4 +720,4 @@ def test_invoice_increase_uses_ai_summary_when_enabled(client, db_session, monke
     assert response.status_code == 200
     data = response.json()
 
-    assert data["summary"] == "AI explanation: invoice increased because usage overage increased."
+    assert data["summary"] == "AI explanation from mocked OpenAI."
