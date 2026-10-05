@@ -1,8 +1,10 @@
 from decimal import Decimal
 
+from app.core.settings import get_settings
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.schemas.billing_investigation import InvoiceIncreaseIn, InvoiceIncreaseOut
+from app.services.billing_ai import BillingAIUnavailable, explain_invoice_increase_with_ai
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -113,6 +115,18 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         difference=difference,
         facts=facts,
     )
+
+
+    settings = get_settings()
+
+    if settings.billing_ai_enabled:
+        try:
+            summary = explain_invoice_increase_with_ai(
+                facts=facts,
+                tool_calls=tool_calls,
+            )
+        except BillingAIUnavailable:
+            pass
 
     return InvoiceIncreaseOut(
         summary=summary,

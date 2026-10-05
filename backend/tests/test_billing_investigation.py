@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
+from app.core.settings import get_settings
 from app.models.customer import Customer
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
@@ -629,3 +630,90 @@ def test_compare_charge_categories_explains_usage_overage():
             "result": "Current base: 40.00, Previous base: 40.00, Current overage: 20.00, Previous overage: 10.00",
         }
     ]
+
+
+def test_invoice_increase_uses_ai_summary_when_enabled(client, db_session, monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "billing_ai_enabled", True)
+    monkeypatch.setattr(settings, "openai_api_key", "test-key")
+
+    customer = Customer(
+        name="AI Investigation Customer",
+        email="ai-investigation@example.com",
+    )
+    db_session.add(customer)
+    db_session.flush()
+
+    previous_invoice = Invoice(
+        invoice_number="INV-AI-202605",
+        customer_id=customer.id,
+        status="draft",
+        due_date=date(2026, 5, 1),
+        subtotal=Decimal("99.00"),
+        tax_amount=Decimal("0.00"),
+        total_amount=Decimal("99.00"),
+        currency="USD",
+    )
+    current_invoice = Invoice(
+        invoice_number="INV-AI-202606",
+        customer_id=customer.id,
+        status="draft",
+        due_date=date(2026, 6, 1),
+        subtotal=Decimal("124.00"),
+        tax_amount=Decimal("0.00"),
+        total_amount=Decimal("124.00"),
+        currency="USD",
+    )
+    db_session.add_all([previous_invoice, current_invoice])
+    db_session.flush()
+
+    db_session.add_all([
+        InvoiceItem(
+            invoice_id=previous_invoice.id,
+            subscription_id=None,
+            item_type="subscription_base",
+            description="Previous base charge",
+            period_start=date(2026, 4, 1),
+            period_end=date(2026, 5, 1),
+            quantity=1,
+            unit_price=Decimal("99.00"),
+            amount=Decimal("99.00"),
+        ),
+        InvoiceItem(
+            invoice_id=current_invoice.id,
+            subscription_id=None,
+            item_type="subscription_base",
+            description="Current base charge",
+            period_start=date(2026, 5, 1),
+            period_end=date(2026, 6, 1),
+            quantity=1,
+            unit_price=Decimal("99.00"),
+            amount=Decimal("99.00"),
+        ),
+        InvoiceItem(
+            invoice_id=current_invoice.id,
+            subscription_id=None,
+            item_type="usage_overage",
+            description="Current usage overage",
+            period_start=date(2026, 5, 1),
+            period_end=date(2026, 6, 1),
+            quantity=5,
+            unit_price=Decimal("5.00"),
+            amount=Decimal("25.00"),
+        ),
+    ])
+    db_session.commit()
+
+    response = client.post(
+        "/billing-investigations/invoice-increase",
+        json={
+            "customer_id": customer.id,
+            "previous_invoice_id": previous_invoice.id,
+            "current_invoice_id": current_invoice.id,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["summary"] == "AI explanation: invoice increased because usage overage increased."
