@@ -27,3 +27,21 @@ def explain_invoice_increase_with_ai(facts: list[str], tool_calls: list[dict]) -
         return "AI explanation: invoice increased because subscription base charges increased."
 
     return "AI explanation: invoice changed based on the retrieved billing records."
+
+def build_billing_ai_prompt(facts: list[str], tool_calls: list[dict]) -> str:
+    facts_text = "\n".join(f"- {fact}" for fact in facts)
+    tool_calls_text = "\n".join(
+        f"- {tool_call['name']}: {tool_call['status']} - {tool_call['result']}"
+        for tool_call in tool_calls
+    )
+
+    return f"""Explain why this customer invoice changed.
+
+Use only these facts:
+{facts_text}
+
+Tool calls:
+{tool_calls_text}
+
+Return one concise customer-facing explanation.
+""".strip()
