@@ -291,6 +291,16 @@ A generation run currently processes one billing interval per due subscription. 
 
 Future improvement: support full overdue catch-up in one run by generating invoice items for each missed billing period before advancing the subscription beyond the run date.
 
+### Optional AI mode
+
+The billing investigation endpoint can optionally use an OpenAI-powered explanation layer.
+
+By default, AI mode is disabled:
+
+```env
+BILLING_AI_ENABLED=false
+```
+
 ## Docker setup
 
 From the repository root:
