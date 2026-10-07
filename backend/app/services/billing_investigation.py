@@ -4,7 +4,7 @@ from app.core.settings import get_settings
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.schemas.billing_investigation import InvoiceIncreaseIn, InvoiceIncreaseOut
-from app.services.billing_ai import BillingAIUnavailable, explain_invoice_increase_with_ai
+from app.services.billing_ai import BillingAIUnavailable, BillingAIError, explain_invoice_increase_with_ai
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -125,7 +125,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
                 facts=facts,
                 tool_calls=tool_calls,
             )
-        except BillingAIUnavailable:
+        except (BillingAIUnavailable, BillingAIError):
             pass
 
     return InvoiceIncreaseOut(

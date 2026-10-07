@@ -6,6 +6,10 @@ class BillingAIUnavailable(Exception):
     pass
 
 
+class BillingAIError(Exception):
+    pass
+
+
 def ensure_billing_ai_enabled() -> None:
     settings = get_settings()
 
@@ -41,10 +45,14 @@ Return one concise customer-facing explanation.
 def call_openai_for_invoice_explanation(prompt: str) -> str:
     settings = get_settings()
 
-    client = OpenAI(api_key=settings.openai_api_key)
-    response = client.responses.create(
-        model=settings.billing_ai_model,
-        input=prompt,
-    )
+    try:
+        client = OpenAI(api_key=settings.openai_api_key)
+        response = client.responses.create(
+            model=settings.billing_ai_model,
+            input=prompt,
+        )
+        
+    except Exception as exc:
+        raise BillingAIError("Billing AI explanation failed") from exc
 
     return response.output_text
