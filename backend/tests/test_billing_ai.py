@@ -8,7 +8,10 @@ from app.services.billing_ai import (
 )
 
 
-def test_billing_ai_disabled_by_default():
+def test_billing_ai_disabled_by_default(monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "billing_ai_enabled", False)
+    monkeypatch.setattr(settings, "openai_api_key", None)
     with pytest.raises(BillingAIUnavailable, match="Billing AI is disabled"):
         ensure_billing_ai_enabled()
 

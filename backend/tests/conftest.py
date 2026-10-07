@@ -8,6 +8,7 @@ from app.api.invoices import get_db as invoices_get_db
 from app.api.plans import get_db as plans_get_db
 from app.api.subscriptions import get_db as subscriptions_get_db
 from app.api.usage_records import get_db as usage_records_get_db
+from app.core.settings import get_settings
 from app.db.session import Base
 from app.main import app
 from fastapi.testclient import TestClient
@@ -81,3 +82,9 @@ def client(db_session):
         yield test_client
 
     app.dependency_overrides.clear()
+
+@pytest.fixture(autouse=True)
+def disable_billing_ai_by_default(monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "billing_ai_enabled", False)
+    monkeypatch.setattr(settings, "openai_api_key", None)
