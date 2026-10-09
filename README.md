@@ -301,7 +301,17 @@ By default, AI mode is disabled:
 BILLING_AI_ENABLED=false
 ```
 
-The billing investigation endpoint supports optional OpenAI-generated explanations when BILLING_AI_ENABLED=true. If the AI provider is unavailable, the service falls back to a deterministic explanation based on retrieved billing records.
+### AI billing investigation mode
+
+The billing investigation endpoint can optionally use OpenAI to generate a customer-facing explanation.
+
+Enable it with:
+
+```env
+BILLING_AI_ENABLED=true
+OPENAI_API_KEY=your_api_key_here
+BILLING_AI_MODEL=gpt-4.1-mini
+```
 
 ## Docker setup
 
