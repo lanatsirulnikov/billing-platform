@@ -1,5 +1,5 @@
-from decimal import Decimal
 import logging
+from decimal import Decimal
 
 from app.core.settings import get_settings
 from app.models.invoice import Invoice
