@@ -1,5 +1,9 @@
+import logging
+
 from app.core.settings import get_settings
 from openai import OpenAI
+
+logger = logging.getLogger(__name__)
 
 
 class BillingAIUnavailable(Exception):
@@ -53,6 +57,7 @@ def call_openai_for_invoice_explanation(prompt: str) -> str:
         )
         
     except Exception as exc:
+        logger.warning("AI invoice explanation failed: %s", exc)
         raise BillingAIError("Billing AI explanation failed") from exc
 
     return response.output_text

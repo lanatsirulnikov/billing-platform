@@ -1,4 +1,5 @@
 from decimal import Decimal
+import logging
 
 from app.core.settings import get_settings
 from app.models.invoice import Invoice
@@ -11,6 +12,8 @@ from app.services.billing_ai import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 MAX_TOOL_CALLS = 6
 
@@ -129,8 +132,8 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
                 facts=facts,
                 tool_calls=tool_calls,
             )
-        except (BillingAIUnavailable, BillingAIError):
-            pass
+        except (BillingAIUnavailable, BillingAIError) as exc:
+            logger.warning("Billing AI fallback used: %s", exc)
 
     return InvoiceIncreaseOut(
         summary=summary,
