@@ -1,15 +1,18 @@
 # app/api/customers.py
 from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.db.session import SessionLocal
 from app.models.customer import Customer
 from app.models.plan import Plan
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from app.db.session import SessionLocal
 from app.models.subscription import Subscription
 from app.schemas.subscription import SubscriptionCreate, SubscriptionOut, SubscriptionStatusUpdate
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+
 
 def get_db():
     db = SessionLocal()
@@ -17,6 +20,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 def is_valid_status_transition(current_status: str, new_status: str) -> bool:
     allowed = {
@@ -26,16 +30,17 @@ def is_valid_status_transition(current_status: str, new_status: str) -> bool:
     }
     return new_status in allowed[current_status]
 
+
 @router.post("", response_model=SubscriptionOut)
 def create_subscription(input: SubscriptionCreate, db: Session = Depends(get_db)):
     customer = db.get(Customer, input.customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="CUSTOMER_NOT_FOUND")
-    
+
     plan = db.get(Plan, input.plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="PLAN_NOT_FOUND")
-    
+
     subscription = Subscription(
         customer_id=input.customer_id,
         plan_id=input.plan_id,
@@ -54,9 +59,11 @@ def create_subscription(input: SubscriptionCreate, db: Session = Depends(get_db)
     db.refresh(subscription)
     return subscription
 
+
 @router.get("", response_model=list[SubscriptionOut])
 def list_subscriptions(db: Session = Depends(get_db)):
     return db.scalars(select(Subscription).order_by(Subscription.created_at.desc())).all()
+
 
 @router.get("/{subscription_id}", response_model=SubscriptionOut)
 def get_subscription(subscription_id: str, db: Session = Depends(get_db)):
@@ -64,6 +71,7 @@ def get_subscription(subscription_id: str, db: Session = Depends(get_db)):
     if not subscription:
         raise HTTPException(status_code=404, detail="SUBSCRIPTION_NOT_FOUND")
     return subscription
+
 
 @router.patch("/{subscription_id}/status", response_model=SubscriptionOut)
 def update_subscription_status(
@@ -86,6 +94,7 @@ def update_subscription_status(
     db.commit()
     db.refresh(subscription)
     return subscription
+
 
 @router.delete("/{subscription_id}")
 def delete_subscription(subscription_id: str, db: Session = Depends(get_db)):

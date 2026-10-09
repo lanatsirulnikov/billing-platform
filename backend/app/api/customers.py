@@ -1,12 +1,14 @@
 # app/api/customers.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
 from app.models.customer import Customer
 from app.schemas.customer import CustomerCreate, CustomerOut
 
 router = APIRouter(prefix="/customers", tags=["customers"])
+
 
 def get_db():
     db = SessionLocal()
@@ -14,6 +16,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 @router.post("", response_model=CustomerOut)
 def create_customer(input: CustomerCreate, db: Session = Depends(get_db)):
@@ -26,9 +29,11 @@ def create_customer(input: CustomerCreate, db: Session = Depends(get_db)):
     db.refresh(customer)
     return customer
 
+
 @router.get("", response_model=list[CustomerOut])
 def list_customers(db: Session = Depends(get_db)):
     return db.scalars(select(Customer).order_by(Customer.created_at.desc())).all()
+
 
 @router.get("/{customer_id}", response_model=CustomerOut)
 def get_customer(customer_id: str, db: Session = Depends(get_db)):

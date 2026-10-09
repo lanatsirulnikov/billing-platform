@@ -12,6 +12,9 @@ class Settings(BaseSettings):
         default="mysql+pymysql://billing_user:billing_password@localhost:3306/billing_platform",
         alias="DATABASE_URL",
     )
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    billing_ai_enabled: bool = Field(default=False, alias="BILLING_AI_ENABLED")
+    billing_ai_model: str = Field(default="gpt-4.1-mini", alias="BILLING_AI_MODEL")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     model_config = SettingsConfigDict(

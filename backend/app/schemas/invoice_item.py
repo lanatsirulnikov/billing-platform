@@ -1,7 +1,8 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, Literal
-from pydantic import BaseModel
+from typing import Literal, Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
 class InvoiceItemCreate(BaseModel):
@@ -28,9 +29,9 @@ class InvoiceItemOut(BaseModel):
     unit_price: Decimal
     amount: Decimal
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class InvoiceItemSubscriptionOut(BaseModel):
     id: str
@@ -38,8 +39,8 @@ class InvoiceItemSubscriptionOut(BaseModel):
     plan_id: str
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class InvoiceItemDetailOut(InvoiceItemOut):
     subscription: Optional[InvoiceItemSubscriptionOut] = None

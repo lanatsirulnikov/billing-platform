@@ -1,14 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.billing_investigation import InvoiceIncreaseOut, InvoiceIncreaseIn
+
+from app.api.customers import get_db
+from app.schemas.billing_investigation import InvoiceIncreaseIn, InvoiceIncreaseOut
 from app.services.billing_investigation import (
     InvoiceInvestigationInvalidInput,
     InvoiceInvestigationNotFound,
     investigate_invoice_increase,
 )
-from app.api.customers import get_db
 
 router = APIRouter(prefix="/billing-investigations", tags=["billing-investigations"])
+
 
 @router.post("/invoice-increase", response_model=InvoiceIncreaseOut)
 def invoice_increase(input: InvoiceIncreaseIn, db: Session = Depends(get_db)):

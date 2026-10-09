@@ -2,6 +2,15 @@ import sys
 from pathlib import Path
 
 import pytest
+from app.api.customers import get_db as customers_get_db
+from app.api.invoice_items import get_db as invoice_items_get_db
+from app.api.invoices import get_db as invoices_get_db
+from app.api.plans import get_db as plans_get_db
+from app.api.subscriptions import get_db as subscriptions_get_db
+from app.api.usage_records import get_db as usage_records_get_db
+from app.core.settings import get_settings
+from app.db.session import Base
+from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -10,15 +19,6 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from app.db.session import Base
-from app.main import app
-from app.models import init  # registers models
-from app.api.customers import get_db as customers_get_db
-from app.api.plans import get_db as plans_get_db
-from app.api.subscriptions import get_db as subscriptions_get_db
-from app.api.invoices import get_db as invoices_get_db
-from app.api.invoice_items import get_db as invoice_items_get_db
-from app.api.usage_records import get_db as usage_records_get_db
 
 @pytest.fixture(scope="session")
 def test_engine(tmp_path_factory):
@@ -40,11 +40,13 @@ def testing_session_factory(test_engine):
         bind=test_engine,
     )
 
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database(test_engine):
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
+
 
 @pytest.fixture
 def db_session(test_engine, testing_session_factory):
@@ -59,6 +61,7 @@ def db_session(test_engine, testing_session_factory):
         session.close()
         Base.metadata.drop_all(bind=test_engine)
         Base.metadata.create_all(bind=test_engine)
+
 
 @pytest.fixture
 def client(db_session):
@@ -79,3 +82,9 @@ def client(db_session):
         yield test_client
 
     app.dependency_overrides.clear()
+
+@pytest.fixture(autouse=True)
+def disable_billing_ai_by_default(monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "billing_ai_enabled", False)
+    monkeypatch.setattr(settings, "openai_api_key", None)

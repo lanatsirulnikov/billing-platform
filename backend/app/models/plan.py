@@ -1,10 +1,11 @@
-from decimal import Decimal
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, Numeric, Integer
+from decimal import Decimal
+
+from app.db.session import Base
+from sqlalchemy import DateTime, Integer, Numeric, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column
-from app.db.session import Base
 
 
 class Plan(Base):

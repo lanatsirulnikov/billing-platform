@@ -1,11 +1,12 @@
-from decimal import Decimal
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
-from sqlalchemy import String, DateTime, Date, ForeignKey, Numeric, Integer, Boolean
+
+from app.db.session import Base
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column
-from app.db.session import Base
 
 
 class Subscription(Base):
@@ -16,7 +17,9 @@ class Subscription(Base):
     plan_id: Mapped[str] = mapped_column(CHAR(36), ForeignKey("plans.id"), nullable=False)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     user_quota_override: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    overage_user_price_override: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=True)
+    overage_user_price_override: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(10, 2), nullable=True
+    )
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)

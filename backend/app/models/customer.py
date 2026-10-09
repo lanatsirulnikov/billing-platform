@@ -1,9 +1,11 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, Boolean
+
+from app.db.session import Base
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import Mapped, mapped_column
-from app.db.session import Base
+
 
 class Customer(Base):
     __tablename__ = "customers"
