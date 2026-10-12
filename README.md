@@ -1,6 +1,6 @@
 # billing-platform
 
-[![CI](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml)
+[![CI](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml)
 
 ## Local setup
 
