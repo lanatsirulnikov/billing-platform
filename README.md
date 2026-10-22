@@ -209,6 +209,7 @@ Example response:
       "result": "Current base: 99.00, Previous base: 99.00, Current overage: 25.00, Previous overage: 0"
     }
   ],
+  "ai_used": false,
   "prompt_version": "billing-investigation-v1"
 }
 ```
@@ -219,6 +220,11 @@ Currently supported explanations:
 - multiple charge categories increased in the same invoice
 - invoice total did not increase
 - missing invoice and wrong-customer validation errors
+
+`ai_used` indicates how the summary was produced:
+
+- `true`: OpenAI generated the explanation.
+- `false`: The deterministic billing explanation was used because AI was disabled or unavailable.
 
 ### Demo data
 
