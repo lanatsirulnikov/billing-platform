@@ -125,6 +125,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
 
 
     settings = get_settings()
+    ai_used = False
 
     if settings.billing_ai_enabled:
         try:
@@ -132,6 +133,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
                 facts=facts,
                 tool_calls=tool_calls,
             )
+            ai_used = True
         except (BillingAIUnavailable, BillingAIError) as exc:
             logger.warning("Billing AI fallback used: %s", exc)
 
@@ -142,6 +144,7 @@ def investigate_invoice_increase(db: Session, input: InvoiceIncreaseIn) -> Invoi
         difference=difference,
         facts=facts,
         tool_calls=tool_calls,
+        ai_used=ai_used,
         prompt_version=PROMPT_VERSION,
     )
 

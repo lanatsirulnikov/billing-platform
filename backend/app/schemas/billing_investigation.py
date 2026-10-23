@@ -22,4 +22,5 @@ class InvoiceIncreaseOut(BaseModel):
     difference: Decimal
     facts: list[str]
     tool_calls: list[ToolCallOut]
+    ai_used: bool
     prompt_version: str

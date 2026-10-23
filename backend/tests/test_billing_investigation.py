@@ -117,6 +117,7 @@ def test_invoice_increase_investigation_explains_usage_overage(client, db_sessio
     assert "fetch_previous_invoice_items" in tool_names
     assert "compare_charge_categories" in tool_names
     assert len(data["tool_calls"]) <= 6
+    assert data["ai_used"] is False
     assert data["prompt_version"] == "billing-investigation-v1"
 
 
@@ -719,5 +720,32 @@ def test_invoice_increase_uses_ai_summary_when_enabled(client, db_session, monke
 
     assert response.status_code == 200
     data = response.json()
+    assert data["ai_used"] is True
 
     assert data["summary"] == "AI explanation from mocked OpenAI."
+
+    def raise_ai_error(facts, tool_calls):
+        from app.services.billing_ai import BillingAIError
+
+        raise BillingAIError("Mocked OpenAI failure")
+
+    monkeypatch.setattr(
+        "app.services.billing_investigation.explain_invoice_increase_with_ai",
+        raise_ai_error,
+    )
+
+    fallback_response = client.post(
+        "/billing-investigations/invoice-increase",
+        json={
+            "customer_id": customer.id,
+            "previous_invoice_id": previous_invoice.id,
+            "current_invoice_id": current_invoice.id,
+        },
+    )
+
+    assert fallback_response.status_code == 200
+    fallback_data = fallback_response.json()
+    assert fallback_data["ai_used"] is False
+    assert fallback_data["summary"] == (
+        "Invoice increased by 25.00. Usage overage increased by 25.00."
+    )

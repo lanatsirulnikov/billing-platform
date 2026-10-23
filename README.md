@@ -1,6 +1,6 @@
 # billing-platform
 
-[![CI](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml)
+[![CI](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml)
 
 ## Local setup
 
@@ -139,6 +139,34 @@ paused means:
 
 The investigation service is organized as a small read-only tool workflow: it fetches invoices, fetches invoice items, compares invoice totals, compares charge categories, and returns structured tool-call logs. The workflow is guarded by a maximum tool-call limit and includes a versioned prompt identifier.
 
+### AI architecture
+
+```text
+Client
+  |
+  v
+FastAPI investigation endpoint
+  |
+  v
+Billing investigation service
+  |
+  +--> Read-only tools
+  |      +--> Fetch invoices
+  |      +--> Fetch invoice items
+  |      +--> Compare totals
+  |      +--> Compare charge categories
+  |
+  v
+Verified billing facts
+  |
+  +--> OpenAI enabled and available --> AI explanation
+  |
+  +--> Disabled or failed -----------> Deterministic fallback
+  |
+  v
+Structured response with facts, tool calls, and ai_used
+```
+
 The backend includes a read-only billing investigation endpoint for answering:
 
 > Why did this customer's invoice increase this month?
@@ -209,6 +237,7 @@ Example response:
       "result": "Current base: 99.00, Previous base: 99.00, Current overage: 25.00, Previous overage: 0"
     }
   ],
+  "ai_used": false,
   "prompt_version": "billing-investigation-v1"
 }
 ```
@@ -219,6 +248,11 @@ Currently supported explanations:
 - multiple charge categories increased in the same invoice
 - invoice total did not increase
 - missing invoice and wrong-customer validation errors
+
+`ai_used` indicates how the summary was produced:
+
+- `true`: OpenAI generated the explanation.
+- `false`: The deterministic billing explanation was used because AI was disabled or unavailable.
 
 ### Demo data
 
@@ -237,30 +271,40 @@ cd backend
 PYTHONPATH=. python scripts/seed_billing_investigation_demo.py
 ```
 
-The script prints:
-
-```
-customer_id=...
-previous_invoice_id=...
-current_invoice_id=...
 ```
 
-Use those values in the investigation request:
+Example seed output:
+
+```text
+Demo data created.
+customer_id=<generated-customer-id>
+previous_invoice_id=<generated-previous-invoice-id>
+current_invoice_id=<generated-current-invoice-id>
+```
+
+Copy the generated values into the request:
 
 ```bash
 curl -X POST http://localhost:8000/billing-investigations/invoice-increase \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "PASTE_CUSTOMER_ID",
-    "previous_invoice_id": "PASTE_PREVIOUS_INVOICE_ID",
-    "current_invoice_id": "PASTE_CURRENT_INVOICE_ID"
+    "customer_id": "<generated-customer-id>",
+    "previous_invoice_id": "<generated-previous-invoice-id>",
+    "current_invoice_id": "<generated-current-invoice-id>"
   }'
 ```
 
-Expected summary:
+Example deterministic fallback result:
 
-```
-Invoice increased by 25.00. Usage overage increased by 25.00.
+```json
+{
+  "summary": "Invoice increased by 25.00. Usage overage increased by 25.00.",
+  "current_total": "124.00",
+  "previous_total": "99.00",
+  "difference": "25.00",
+  "ai_used": false,
+  "prompt_version": "billing-investigation-v1"
+}
 ```
 
 ### Evaluation cases
