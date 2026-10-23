@@ -294,7 +294,7 @@ curl -X POST http://localhost:8000/billing-investigations/invoice-increase \
   }'
 ```
 
-Example deterministic fallback result::
+Example deterministic fallback result:
 
 ```json
 {
