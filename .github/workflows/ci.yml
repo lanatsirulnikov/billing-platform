@@ -64,25 +64,19 @@ jobs:
     name: Database migrations
     runs-on: ubuntu-24.04
 
-    services:
-      postgres:
-        image: public.ecr.aws/docker/library/postgres:16
-        env:
-          POSTGRES_DB: billing_platform
-          POSTGRES_USER: billing_user
-          POSTGRES_PASSWORD: billing_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U billing_user -d billing_platform"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     env:
       DATABASE_URL: postgresql+psycopg://billing_user:billing_password@localhost:5432/billing_platform
 
     steps:
+      - name: Start PostgreSQL
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql \
+            --command="CREATE USER billing_user WITH PASSWORD 'billing_password';"
+          sudo -u postgres psql \
+            --command="CREATE DATABASE billing_platform OWNER billing_user;"
+          pg_isready -h localhost -p 5432
+          
       - name: Check out repository
         uses: actions/checkout@v5
 
