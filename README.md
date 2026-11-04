@@ -7,26 +7,29 @@
 ### Requirements
 
 - Python 3.11
-- MySQL 8
+- PostgreSQL 16
 - Node.js 20.19+ or 22.12+
 
-### 1. Create the local database
+### 1. Create the local PostgreSQL database
 
-Open MySQL as an administrator:
+Open PostgreSQL as an administrator:
 
 ```bash
-mysql -u root -p
+psql postgres
 ```
 
-Create the development database and user:
+Depending on your PostgreSQL installation, you may need:
+
+```bash
+psql -U postgres
+```
+
+Create the development user and database:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS billing_platform;
-CREATE USER IF NOT EXISTS 'billing_user'@'localhost'
-  IDENTIFIED BY 'billing_password';
-GRANT ALL PRIVILEGES ON billing_platform.* TO 'billing_user'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
+CREATE USER billing_user WITH PASSWORD 'billing_password';
+CREATE DATABASE billing_platform OWNER billing_user;
+\q
 ```
 
 These credentials are for local development only.

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="billing-platform-api", alias="APP_NAME")
     app_port: int = Field(default=8000, alias="APP_PORT")
     database_url: str = Field(
-        default="mysql+pymysql://billing_user:billing_password@localhost:3306/billing_platform",
+        default="postgresql+psycopg://billing_user:billing_password@localhost:5432/billing_platform",
         alias="DATABASE_URL",
     )
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
