@@ -1,32 +1,85 @@
-# billing-platform
+# Billing Platform
 
 [![CI](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lanatsirulnikov/billing-platform/actions/workflows/ci.yml)
+
+Billing Platform is a FastAPI and PostgreSQL backend for managing customers,
+plans, subscriptions, usage-based charges, and billing-cycle invoice generation.
+It includes an optional AI-assisted investigation workflow that explains invoice
+changes using verified billing facts and read-only, inspectable tools.
+
+The project focuses on backend billing rules, transactional safety, duplicate
+charge prevention, automated testing, and deterministic behavior when AI is
+disabled or unavailable.
+
+## Implemented capabilities
+
+- Customer, plan, subscription, usage-record, and invoice APIs
+- Recurring subscription and usage-overage invoice items
+- Duplicate charge protection by subscription, charge type, and billing period
+- Transaction rollback when invoice generation fails
+- PostgreSQL invoice-number allocation with row locking
+- Read-only invoice investigation with structured tool-call results
+- Optional OpenAI explanations with deterministic fallback
+- Docker Compose, database migrations, automated tests, linting, and CI
+
+## Architecture
+
+```text
+React client / API consumers
+            |
+            v
+       FastAPI routes
+            |
+            v
+        Service layer
+       /             \
+      v               v
+Invoice generation   Billing investigation
+      |               |        |
+      |               |        +--> Optional OpenAI explanation
+      |               |             with deterministic fallback
+      |               |
+      |               +--> Read-only investigation tools
+      |                     and structured tool-call results
+      v
+   SQLAlchemy ORM
+            |
+            v
+      PostgreSQL 16
+```
+
+FastAPI routes handle HTTP validation and responses. Business rules remain in
+the service layer, while SQLAlchemy manages persistence and PostgreSQL provides
+transactions, uniqueness constraints, and invoice-number locking.
 
 ## Local setup
 
 ### Requirements
 
 - Python 3.11
-- MySQL 8
+- PostgreSQL 16
 - Node.js 20.19+ or 22.12+
 
-### 1. Create the local database
+### 1. Create the local PostgreSQL database
 
-Open MySQL as an administrator:
+Open PostgreSQL as an administrator:
 
 ```bash
-mysql -u root -p
+psql postgres
 ```
 
-Create the development database and user:
+Depending on your PostgreSQL installation, you may need:
+
+```bash
+psql -U postgres
+```
+
+Create the development user and database:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS billing_platform;
-CREATE USER IF NOT EXISTS 'billing_user'@'localhost'
-  IDENTIFIED BY 'billing_password';
-GRANT ALL PRIVILEGES ON billing_platform.* TO 'billing_user'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
+CREATE USER billing_user WITH PASSWORD 'billing_password';
+CREATE DATABASE billing_platform OWNER billing_user;
+\q
 ```
 
 These credentials are for local development only.
@@ -95,45 +148,33 @@ npm run lint
 npm run build
 ```
 
-## Invoice Generation Strategy
+## Billing generation behavior
 
-- invoices are auto-generated every day
-- generation only considers subscriptions whose NextBillingDate <= now
-- after billing a subscription base item, its NextBillingDate is advanced by the billing interval
-- overage is tied to the same customer, the same subscription, and the previous billing period
-- real usage-based billing will later come from a usage_records table
-- invoice numbers should use INV-YYYYMM-001 style
+Invoice generation is invoked explicitly with a billing run date. The project
+does not currently include a scheduler or background worker.
 
-For each customer:
+For each generation run, the service:
 
-1. check subscriptions with due_date in a window from today - n days to today
-2. for each due subscription, add a subscription charge as an invoice item
-3. after adding that charge, move the subscription due_date forward by its billing interval
-4. check extra users for the last billing period
-5. add overage items for that period
-6. if there is already an existing invoice you want to keep unchanged, create a new invoice instead of modifying the old one
-7. if multiple subscriptions are due for the same customer during the run, they can all go onto one invoice
+1. Selects billable subscriptions whose `next_billing_date` is due.
+2. Groups due subscriptions by customer.
+3. Creates or reuses one draft invoice for that customer.
+4. Adds a base subscription item for each unbilled subscription period.
+5. Calculates usage overage from `usage_records` for the same subscription and period.
+6. Prevents duplicate base and overage items using the subscription, item type,
+   period start, and period end.
+7. Recalculates invoice totals and advances the subscription by one billing interval.
+8. Commits all changes for the customer together or rolls them back on failure.
 
-For each due subscription:
+Invoice numbers use the `INV-YYYYMM-NNN` format. PostgreSQL row locking protects
+updates to an existing monthly invoice-number counter.
 
-1. find its previous billing period
-2. calculate usage in that period
-3. create overage item only for that subscription and that previous period
-4. do not duplicate overage for the same subscription-period pair
+### Subscription state rules
 
-For a cancelled subscription:
-
-- do not create new base items for periods after cancellation
-- do allow usage_overage for the last completed overage period if it has not already been billed
-
-For paused subscription:
-
-Pause effective next cycle:
-paused means:
-- no new billing cycles start while paused
-- current cycle remains billed normally
-- no future base items until resumed
-(Pause effective immediately with proration implementation later)
+- Active subscriptions advance to their next billing period after processing.
+- Paused and cancelled subscriptions finish the currently processed cycle and
+  are then marked as no longer billable.
+- Immediate proration is not currently implemented.
+- An overdue subscription advances one interval per generation run.
 
 ## Billing Investigation Assistant
 
@@ -188,6 +229,7 @@ Example request:
   "current_invoice_id": "current-invoice-id"
 }
 ```
+
 Example response:
 
 ```json
@@ -271,8 +313,6 @@ cd backend
 PYTHONPATH=. python scripts/seed_billing_investigation_demo.py
 ```
 
-```
-
 Example seed output:
 
 ```text
@@ -329,33 +369,94 @@ For subscription-level quota and overage price overrides:
 
 This keeps accidental zero values from creating unrealistic billing behavior, such as zero included users or free overage.
 
-### Overdue subscriptions
-
-A generation run currently processes one billing interval per due subscription. If a subscription is multiple periods overdue, repeated generation runs are required to fully catch up.
-
-Future improvement: support full overdue catch-up in one run by generating invoice items for each missed billing period before advancing the subscription beyond the run date.
-
 ### Optional AI mode
 
-The billing investigation endpoint can optionally use an OpenAI-powered explanation layer.
-
-By default, AI mode is disabled:
+The billing investigation endpoint uses deterministic explanations by default:
 
 ```env
 BILLING_AI_ENABLED=false
 ```
 
-### AI billing investigation mode
-
-The billing investigation endpoint can optionally use OpenAI to generate a customer-facing explanation.
-
-Enable it with:
+To enable OpenAI-generated customer-facing explanations:
 
 ```env
 BILLING_AI_ENABLED=true
 OPENAI_API_KEY=your_api_key_here
 BILLING_AI_MODEL=gpt-4.1-mini
 ```
+
+If OpenAI is unavailable or the request fails, the endpoint returns the
+deterministic explanation instead and reports `ai_used: false`.
+
+## Engineering decisions
+
+### Monetary values
+
+Application calculations use Python `Decimal`, while database amounts use
+fixed-precision `NUMERIC(10, 2)` columns. This avoids binary floating-point
+rounding errors in invoice totals and usage charges.
+
+### Transaction boundaries
+
+Invoice generation commits once per customer. Invoice items, recalculated
+totals, subscription billing dates, and billable-state changes are committed
+together. If processing for that customer fails, the transaction is rolled back
+and the error is propagated.
+
+### Duplicate-charge prevention
+
+Before adding an item, the service checks for an existing charge for the same
+subscription, item type, and billing period. A database uniqueness constraint on
+those fields provides an additional protection against duplicate base and
+overage charges.
+
+### Invoice-number allocation
+
+Invoice numbers use a monthly counter and the `INV-YYYYMM-NNN` format.
+PostgreSQL row locking serializes updates to an existing counter, and invoice
+numbers also have a database uniqueness constraint.
+
+### AI boundaries and fallback
+
+Billing calculations remain in deterministic application code. The optional AI
+layer receives verified facts and read-only tool results only. If AI is disabled
+or unavailable, the endpoint returns a deterministic explanation and reports
+`ai_used: false`.
+
+### Failure behavior
+
+Billing errors roll back the current customer transaction instead of leaving
+partial invoice items or advanced billing dates. External AI failures are logged
+and handled through the deterministic fallback rather than failing the billing
+investigation request.
+
+## Known limitations
+
+- The API does not yet implement authentication, authorization, or enforced
+  tenant isolation.
+- Invoice generation is invoked synchronously and does not include a scheduler,
+  queue, automatic retries, or job-status tracking.
+- An overdue subscription advances one interval per generation run rather than
+  generating all missed periods in one run.
+- Paused and cancelled subscriptions do not support immediate proration.
+- Concurrent billing execution has not yet been verified with a dedicated
+  PostgreSQL concurrency test.
+- Automatically generated invoices currently use USD and do not calculate tax
+  or perform currency conversion.
+- AI investigation tool calls are returned in the API response but are not
+  persisted as a permanent audit record.
+- The frontend is intentionally limited; the project primarily demonstrates
+  backend design and billing behavior.
+
+## Roadmap
+
+- Add authentication, authorization, and customer-scoped data access.
+- Run billing generation through a scheduler, queue, and background worker.
+- Add PostgreSQL concurrency tests for duplicate charges and invoice numbers.
+- Support full overdue-period catch-up in one billing run.
+- Add proration rules for subscription pauses, cancellations, and plan changes.
+- Define immutable finalized invoices and persistent billing audit history.
+- Persist AI investigation runs and their tool-call outcomes.
 
 ## Docker setup
 
